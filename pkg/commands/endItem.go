@@ -3,7 +3,7 @@ package commands
 import (
 	"encoding/xml"
 
-	"github.com/dracoDevs/go-ebay-plus/internal/ebay"
+	"github.com/dracoDevs/go-ebay/internal/ebay"
 )
 
 type EndItem struct {

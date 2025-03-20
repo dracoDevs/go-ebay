@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/dracoDevs/go-ebay-plus/internal/utils"
+	"github.com/dracoDevs/go-ebay/internal/utils"
 )
 
 type Command interface {
