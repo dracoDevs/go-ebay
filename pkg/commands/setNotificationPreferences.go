@@ -42,22 +42,22 @@ type UserDeliveryPreferenceArray struct {
 }
 
 type SetNotificationPreferences struct {
-	ApplicationDeliveryPreferences ApplicationDeliveryPreferences
-	DeliveryURLName                string
-	EventProperty                  []EventProperty
-	UserData                       UserData
-	UserDeliveryPreferenceArray    UserDeliveryPreferenceArray
-	ErrorLanguage                  string
-	MessageID                      string
-	Version                        string
-	WarningLevel                   string
+	ApplicationDeliveryPreferences *ApplicationDeliveryPreferences `xml:"ApplicationDeliveryPreferences,omitempty"`
+	DeliveryURLName                string                         `xml:"DeliveryURLName,omitempty"`
+	EventProperty                  []EventProperty                `xml:"EventProperty,omitempty"`
+	UserData                       *UserData                       `xml:"UserData,omitempty"`
+	UserDeliveryPreferenceArray    UserDeliveryPreferenceArray    `xml:"UserDeliveryPreferenceArray,omitempty"`
+	ErrorLanguage                  string                         `xml:"ErrorLanguage,omitempty"`
+	MessageID                      string                         `xml:"MessageID,omitempty"`
+	Version                        string                         `xml:"Version,omitempty"`
+	WarningLevel                   string                         `xml:"WarningLevel,omitempty"`
 }
 
 func (c SetNotificationPreferences) CallName() string {
 	return "SetNotificationPreferences"
 }
 
-func (c SetNotificationPreferences) Body() interface{} {
+func (c SetNotificationPreferences) Body() interface{} {	
 	return c
 }
 

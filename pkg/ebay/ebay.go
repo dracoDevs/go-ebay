@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 
 	"github.com/dracoDevs/go-ebay/internal/utils"
@@ -47,9 +48,20 @@ func (e EbayConf) RunCommand(c Command) (EbayResponse, error) {
 		return OtherEbayResponse{}, err
 	}
 
-	if c.CallName() == "EndItem" {
+	if c.CallName() == "EndItem" || c.CallName() == "SetNotificationPreferences" {
 		bodyStr := utils.RemoveTagXML(body.String(), c.CallName())
 		body = bytes.NewBufferString(bodyStr)
+	}
+
+	xmlFileName := fmt.Sprintf("%s.xml", c.CallName())
+	file, err := os.Create(xmlFileName)
+	if err != nil {
+		return OtherEbayResponse{}, err
+	}
+	defer file.Close()
+
+	if _, err := file.Write(body.Bytes()); err != nil {
+		return OtherEbayResponse{}, err
 	}
 
 	if e.Logger != nil {
@@ -62,7 +74,7 @@ func (e EbayConf) RunCommand(c Command) (EbayResponse, error) {
 	req.Header.Add("X-EBAY-API-CERT-NAME", e.CertId)
 	req.Header.Add("X-EBAY-API-CALL-NAME", c.CallName())
 	req.Header.Add("X-EBAY-API-SITEID", strconv.Itoa(e.SiteId))
-	req.Header.Add("X-EBAY-API-COMPATIBILITY-LEVEL", strconv.Itoa(837))
+	req.Header.Add("X-EBAY-API-COMPATIBILITY-LEVEL", strconv.Itoa(1173))
 	req.Header.Add("Content-Type", "text/xml")
 
 	client := &http.Client{
