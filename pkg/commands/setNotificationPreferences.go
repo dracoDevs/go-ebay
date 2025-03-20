@@ -13,13 +13,13 @@ type DeliveryURLDetail struct {
 }
 
 type ApplicationDeliveryPreferences struct {
-	AlertEmail         string
-	AlertEnable        string
-	ApplicationEnable  string
-	ApplicationURL     string
-	DeliveryURLDetails []DeliveryURLDetail
-	DeviceType         string
-	PayloadVersion     string
+	AlertEmail         string              `xml:",omitempty"`
+	AlertEnable        string              `xml:",omitempty"`
+	ApplicationEnable  string              `xml:",omitempty"`
+	ApplicationURL     string              `xml:",omitempty"`
+	DeliveryURLDetails []DeliveryURLDetail `xml:",omitempty"`
+	DeviceType         string              `xml:",omitempty"`
+	PayloadVersion     string              `xml:",omitempty"`
 }
 
 type EventProperty struct {

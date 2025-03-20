@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 
 	"github.com/dracoDevs/go-ebay/internal/utils"
@@ -53,16 +52,16 @@ func (e EbayConf) RunCommand(c Command) (EbayResponse, error) {
 		body = bytes.NewBufferString(bodyStr)
 	}
 
-	xmlFileName := fmt.Sprintf("%s.xml", c.CallName())
-	file, err := os.Create(xmlFileName)
-	if err != nil {
-		return OtherEbayResponse{}, err
-	}
-	defer file.Close()
+	// xmlFileName := fmt.Sprintf("%s.xml", c.CallName())
+	// file, err := os.Create(xmlFileName)
+	// if err != nil {
+	// 	return OtherEbayResponse{}, err
+	// }
+	// defer file.Close()
 
-	if _, err := file.Write(body.Bytes()); err != nil {
-		return OtherEbayResponse{}, err
-	}
+	// if _, err := file.Write(body.Bytes()); err != nil {
+	// 	return OtherEbayResponse{}, err
+	// }
 
 	if e.Logger != nil {
 		e.Logger(body.String())
