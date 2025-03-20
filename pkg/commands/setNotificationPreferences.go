@@ -46,7 +46,7 @@ type SetNotificationPreferences struct {
 	DeliveryURLName                string                         `xml:"DeliveryURLName,omitempty"`
 	EventProperty                  []EventProperty                `xml:"EventProperty,omitempty"`
 	UserData                       *UserData                       `xml:"UserData,omitempty"`
-	UserDeliveryPreferenceArray    UserDeliveryPreferenceArray    `xml:"UserDeliveryPreferenceArray,omitempty"`
+	UserDeliveryPreferenceArray    *UserDeliveryPreferenceArray    `xml:"UserDeliveryPreferenceArray,omitempty"`
 	ErrorLanguage                  string                         `xml:"ErrorLanguage,omitempty"`
 	MessageID                      string                         `xml:"MessageID,omitempty"`
 	Version                        string                         `xml:"Version,omitempty"`
