@@ -13,6 +13,3 @@ Welcome to the unofficial Golang wrapper for the eBay Trading API! This reposito
 
 Documentation is coming soon! In the meantime, the code is well-organized and easy to read, allowing you to explore and understand the functionality with ease.
 
-## Getting Started
-
-To get started, clone the repository and follow the setup instructions in the documentation. Ensure you have Go installed on your system.
