@@ -52,7 +52,7 @@ func (e EbayConf) RunCommand(c Command) (EbayResponse, error) {
 		body = bytes.NewBufferString(bodyStr)
 	}
 
-	// xmlFileName := fmt.Sprintf("%s.xml", c.CallName())
+	// xmlFileName := fmt.Sprintf("%s_%d.xml", c.CallName(), rand.Intn(100)) // Generates random digits each time
 	// file, err := os.Create(xmlFileName)
 	// if err != nil {
 	// 	return OtherEbayResponse{}, err

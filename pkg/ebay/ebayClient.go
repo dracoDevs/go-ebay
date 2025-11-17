@@ -11,7 +11,6 @@ type ebayRequest struct {
 	command Command
 }
 
-
 type EbayResponse interface {
 	Failure() bool
 	ResponseErrors() EbayErrors
