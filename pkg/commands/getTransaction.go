@@ -7,6 +7,7 @@ import (
 )
 
 type GetItemTransactions struct {
+	ItemID        string
 	TransactionID string
 }
 
@@ -15,11 +16,7 @@ func (c GetItemTransactions) CallName() string {
 }
 
 func (c GetItemTransactions) Body() interface{} {
-	type TransactionID struct {
-		TransactionID string `xml:",innerxml"`
-	}
-
-	return TransactionID{c.TransactionID}
+	return GetItemTransactions{ItemID: c.ItemID, TransactionID: c.TransactionID}
 }
 
 func (c GetItemTransactions) ParseResponse(r []byte) (ebay.EbayResponse, error) {

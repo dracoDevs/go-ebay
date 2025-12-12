@@ -30,7 +30,7 @@ func (c EndItem) CallName() string {
 
 func (c EndItem) Body() interface{} {
 	return EndItem{
-		ItemID: c.ItemID,
+		ItemID:       c.ItemID,
 		EndingReason: c.EndingReason,
 	}
 }
