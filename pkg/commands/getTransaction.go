@@ -7,8 +7,8 @@ import (
 )
 
 type GetItemTransactions struct {
-	ItemID        string
-	TransactionID string
+	ItemID        string `xml:"ItemID"`
+	TransactionID string `xml:"TransactionID"`
 }
 
 func (c GetItemTransactions) CallName() string {
