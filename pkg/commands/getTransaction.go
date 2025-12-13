@@ -29,19 +29,19 @@ func (c GetItemTransactions) ParseResponse(r []byte) (ebay.EbayResponse, error) 
 type GetItemTransactionsResponse struct {
 	ebay.OtherEbayResponse
 
-	HasMoreTransactions bool `xml:"HasMoreTransactions,omitempty"`
+	HasMoreTransactions bool `xml:"HasMoreTransactions"`
 
 	Item struct {
 		ApplicationData string  `xml:"ApplicationData,omitempty"`
 		AutoPay         bool    `xml:"AutoPay,omitempty"`
-		BuyItNowPrice   float64 `xml:"BuyItNowPrice,omitempty"`
+		BuyItNowPrice   float64 `xml:"BuyItNowPrice"`
 		CurrencyID      string  `xml:"BuyItNowPrice>currencyID,attr,omitempty"`
 		Charity         struct {
 			CharityListing bool `xml:"CharityListing,omitempty"`
 		} `xml:"Charity,omitempty"`
 		Currency                string `xml:"Currency,omitempty"`
 		InventoryTrackingMethod string `xml:"InventoryTrackingMethod,omitempty"`
-		ItemID                  string `xml:"ItemID,omitempty"`
+		ItemID                  string `xml:"ItemID"`
 		ListingDetails          struct {
 			EndTime                string `xml:"EndTime,omitempty"`
 			HasUnansweredQuestions bool   `xml:"HasUnansweredQuestions,omitempty"`
@@ -51,7 +51,7 @@ type GetItemTransactionsResponse struct {
 		Location       string `xml:"Location,omitempty"`
 		LotSize        int    `xml:"LotSize,omitempty"`
 		PrivateListing bool   `xml:"PrivateListing,omitempty"`
-		Quantity       int    `xml:"Quantity,omitempty"`
+		Quantity       int    `xml:"Quantity"`
 		Seller         struct {
 			EBayGoodStanding        bool    `xml:"eBayGoodStanding,omitempty"`
 			EIASToken               string  `xml:"EIASToken,omitempty"`
@@ -63,7 +63,7 @@ type GetItemTransactionsResponse struct {
 			RegistrationDate        string  `xml:"RegistrationDate,omitempty"`
 			Site                    string  `xml:"Site,omitempty"`
 			Status                  string  `xml:"Status,omitempty"`
-			UserID                  string  `xml:"UserID,omitempty"`
+			UserID                  string  `xml:"UserID"`
 			UserIDChanged           bool    `xml:"UserIDChanged,omitempty"`
 			VATStatus               string  `xml:"VATStatus,omitempty"`
 		} `xml:"Seller,omitempty"`
@@ -76,21 +76,21 @@ type GetItemTransactionsResponse struct {
 			FinalValueFee         float64 `xml:"FinalValueFee,omitempty"`
 			FeeCurrencyID         string  `xml:"FinalValueFee>currencyID,attr,omitempty"`
 			ListingStatus         string  `xml:"ListingStatus,omitempty"`
-			QuantitySold          int     `xml:"QuantitySold,omitempty"`
+			QuantitySold          int     `xml:"QuantitySold"`
 		} `xml:"SellingStatus,omitempty"`
 		Site            string  `xml:"Site,omitempty"`
 		SKU             string  `xml:"SKU,omitempty"`
 		StartPrice      float64 `xml:"StartPrice,omitempty"`
 		StartCurrencyID string  `xml:"StartPrice>currencyID,attr,omitempty"`
 		Title           string  `xml:"Title,omitempty"`
-	} `xml:"Item,omitempty"`
+	} `xml:"Item"`
 
 	TransactionArray struct {
 		Transactions []struct {
-			TransactionID     string `xml:"TransactionID,omitempty"`
-			QuantityPurchased int    `xml:"QuantityPurchased,omitempty"`
+			TransactionID     string `xml:"TransactionID"`
+			QuantityPurchased int    `xml:"QuantityPurchased"`
 			Buyer             struct {
-				UserID    string `xml:"UserID,omitempty"`
+				UserID    string `xml:"UserID"`
 				Email     string `xml:"Email,omitempty"`
 				EIASToken string `xml:"EIASToken,omitempty"`
 			} `xml:"Buyer,omitempty"`
@@ -123,7 +123,7 @@ type GetItemTransactionsResponse struct {
 			} `xml:"Variation,omitempty"`
 			// Add more fields as needed from the full schema
 		} `xml:"Transaction,omitempty"`
-	} `xml:"TransactionArray,omitempty"`
+	} `xml:"TransactionArray"`
 }
 
 func (r GetItemTransactionsResponse) ResponseErrors() ebay.EbayErrors {
