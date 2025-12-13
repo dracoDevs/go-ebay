@@ -34,8 +34,8 @@ type GetItemTransactionsResponse struct {
 	Item struct {
 		ApplicationData string  `xml:"ApplicationData,omitempty"`
 		AutoPay         bool    `xml:"AutoPay,omitempty"`
-		BuyItNowPrice   float64 `xml:"BuyItNowPrice"`
-		CurrencyID      string  `xml:"BuyItNowPrice>currencyID,attr,omitempty"`
+		BuyItNowPrice   float64 `xml:"BuyItNowPrice,omitempty"`
+		CurrencyID      string  `xml:"CurrencyID,attr,omitempty"`
 		Charity         struct {
 			CharityListing bool `xml:"CharityListing,omitempty"`
 		} `xml:"Charity,omitempty"`
