@@ -47,7 +47,7 @@ func (e EbayConf) RunCommand(c Command) (EbayResponse, error) {
 		return OtherEbayResponse{}, err
 	}
 
-	if c.CallName() == "EndItem" || c.CallName() == "SetNotificationPreferences" {
+	if c.CallName() == "EndItem" || c.CallName() == "SetNotificationPreferences" || c.CallName() == "GetItemTransactions" {
 		bodyStr := utils.RemoveTagXML(body.String(), c.CallName())
 		body = bytes.NewBufferString(bodyStr)
 	}
