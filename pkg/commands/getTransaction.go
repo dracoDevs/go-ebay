@@ -70,18 +70,18 @@ type GetItemTransactionsResponse struct {
 		SellingStatus struct {
 			BidCount              int     `xml:"BidCount,omitempty"`
 			ConvertedCurrentPrice float64 `xml:"ConvertedCurrentPrice,omitempty"`
-			ConvertedCurrencyID   string  `xml:"ConvertedCurrentPrice>currencyID,attr,omitempty"`
+			ConvertedCurrencyID   string  `xml:"ConvertedCurrencyID,attr,omitempty"`
 			CurrentPrice          float64 `xml:"CurrentPrice,omitempty"`
-			CurrencyID            string  `xml:"CurrentPrice>currencyID,attr,omitempty"`
+			CurrencyID            string  `xml:"CurrencyID,attr,omitempty"`
 			FinalValueFee         float64 `xml:"FinalValueFee,omitempty"`
-			FeeCurrencyID         string  `xml:"FinalValueFee>currencyID,attr,omitempty"`
+			FeeCurrencyID         string  `xml:"FeeCurrencyID,attr,omitempty"`
 			ListingStatus         string  `xml:"ListingStatus,omitempty"`
 			QuantitySold          int     `xml:"QuantitySold"`
 		} `xml:"SellingStatus,omitempty"`
 		Site            string  `xml:"Site,omitempty"`
 		SKU             string  `xml:"SKU,omitempty"`
 		StartPrice      float64 `xml:"StartPrice,omitempty"`
-		StartCurrencyID string  `xml:"StartPrice>currencyID,attr,omitempty"`
+		StartCurrencyID string  `xml:"StartCurrencyID,attr,omitempty"`
 		Title           string  `xml:"Title,omitempty"`
 	} `xml:"Item"`
 
@@ -95,7 +95,7 @@ type GetItemTransactionsResponse struct {
 				EIASToken string `xml:"EIASToken,omitempty"`
 			} `xml:"Buyer,omitempty"`
 			AmountPaid      float64 `xml:"AmountPaid,omitempty"`
-			CurrencyID      string  `xml:"AmountPaid>currencyID,attr,omitempty"`
+			CurrencyID      string  `xml:"CurrencyID,attr,omitempty"`
 			OrderLineItemID string  `xml:"OrderLineItemID,omitempty"`
 
 			CreatedDate string `xml:"CreatedDate,omitempty"`
