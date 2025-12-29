@@ -7,10 +7,11 @@ import (
 )
 
 type CompleteSale struct {
-	ItemID        string    `xml:"ItemID,omitempty"`
-	Shipped       *bool     `xml:"Shipped,omitempty"`
-	TransactionID string    `xml:"TransactionID,omitempty"`
-	Shipment      *Shipment `xml:"Shipment,omitempty"`
+	ItemID          *string   `xml:"ItemID,omitempty"`
+	Shipped         *bool     `xml:"Shipped,omitempty"`
+	TransactionID   *string   `xml:"TransactionID,omitempty"`
+	Shipment        *Shipment `xml:"Shipment,omitempty"`
+	OrderLineItemID *string   `xml:"OrderLineItemID,omitempty"`
 }
 
 type Shipment struct {
@@ -28,10 +29,11 @@ func (c CompleteSale) CallName() string {
 
 func (c CompleteSale) Body() interface{} {
 	return CompleteSale{
-		ItemID:        c.ItemID,
-		Shipped:       c.Shipped,
-		TransactionID: c.TransactionID,
-		Shipment:      c.Shipment,
+		ItemID:          c.ItemID,
+		Shipped:         c.Shipped,
+		TransactionID:   c.TransactionID,
+		Shipment:        c.Shipment,
+		OrderLineItemID: c.OrderLineItemID,
 	}
 }
 
