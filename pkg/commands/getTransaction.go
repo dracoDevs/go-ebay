@@ -9,6 +9,7 @@ import (
 type GetItemTransactions struct {
 	ItemID        string `xml:"ItemID"`
 	TransactionID string `xml:"TransactionID"`
+	NumberOfDays  int    `xml:"NumberOfDays"`
 }
 
 func (c GetItemTransactions) CallName() string {

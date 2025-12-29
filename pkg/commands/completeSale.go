@@ -31,6 +31,7 @@ func (c CompleteSale) Body() interface{} {
 		ItemID:        c.ItemID,
 		Shipped:       c.Shipped,
 		TransactionID: c.TransactionID,
+		Shipment:      c.Shipment,
 	}
 }
 
