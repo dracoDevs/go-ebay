@@ -14,7 +14,7 @@ type ItemSpecifics struct {
 
 type NameValueList struct {
 	Name  string
-	Value []string
+	Value string
 }
 
 type PictureDetails struct {
