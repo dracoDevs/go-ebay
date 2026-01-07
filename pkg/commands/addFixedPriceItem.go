@@ -27,7 +27,7 @@ type AddFixedPriceItem struct {
 	ReturnPolicy          *ReturnPolicy          `xml:",omitempty"`
 	PictureDetails        *PictureDetails        `xml:",omitempty"`
 	ProductListingDetails *ProductListingDetails `xml:",omitempty"`
-	ItemSpecifics         []ItemSpecifics        `xml:",omitempty"`
+	ItemSpecifics         ItemSpecifics          `xml:",omitempty"`
 }
 
 func (c AddFixedPriceItem) CallName() string {
