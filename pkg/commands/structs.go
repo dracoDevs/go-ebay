@@ -34,8 +34,8 @@ type BrandMPN struct {
 }
 
 type ProductListingDetails struct {
-	UPC      string
-	BrandMPN BrandMPN
+	UPC string
+	// BrandMPN BrandMPN
 }
 
 type ShippingDetails struct {
