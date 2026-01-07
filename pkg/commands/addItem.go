@@ -28,7 +28,7 @@ type AddItem struct {
 	ReturnPolicy          *ReturnPolicy          `xml:",omitempty"`
 	PictureDetails        *PictureDetails        `xml:",omitempty"`
 	ProductListingDetails *ProductListingDetails `xml:",omitempty"`
-	ItemSpecifics         []ItemSpecifics        `xml:",omitempty"`
+	ItemSpecifics         map[string]string      `xml:",omitempty"`
 }
 
 func (c AddItem) CallName() string {
