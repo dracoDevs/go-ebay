@@ -42,6 +42,7 @@ type ShippingDetails struct {
 	ShippingType                           string
 	ShippingDiscountProfileID              string
 	InternationalShippingDiscountProfileID string
+	ExcludeShipToLocation                  []string
 	ShippingServiceOptions                 []ShippingServiceOption
 	InternationalShippingServiceOption     []InternationalShippingServiceOption
 }
