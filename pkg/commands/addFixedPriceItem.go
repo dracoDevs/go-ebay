@@ -15,7 +15,6 @@ type AddFixedPriceItem struct {
 	Description           string `xml:",omitempty"`
 	StartPrice            string
 	ListingType           string            `xml:",omitempty"`
-	BrandMPN              BrandMPN          `xml:",omitempty"`
 	Quantity              uint              `xml:",omitempty"`
 	BestOfferDetails      *BestOfferDetails `xml:",omitempty"`
 	PaymentMethods        string            `xml:",omitempty"`
