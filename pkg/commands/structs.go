@@ -51,6 +51,7 @@ type ShippingServiceOption struct {
 	ShippingService               string
 	ShippingServiceCost           float64
 	ShippingServiceAdditionalCost float64
+	ShippingServicePriority       int
 	FreeShipping                  bool
 }
 
