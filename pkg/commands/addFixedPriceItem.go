@@ -15,6 +15,7 @@ type AddFixedPriceItem struct {
 	Description           string `xml:",omitempty"`
 	StartPrice            string
 	ListingType           string            `xml:",omitempty"`
+	BrandMPN              *BrandMPN         `xml:",omitempty"`
 	Quantity              uint              `xml:",omitempty"`
 	BestOfferDetails      *BestOfferDetails `xml:",omitempty"`
 	PaymentMethods        string            `xml:",omitempty"`
@@ -27,7 +28,7 @@ type AddFixedPriceItem struct {
 	ReturnPolicy          *ReturnPolicy          `xml:",omitempty"`
 	PictureDetails        *PictureDetails        `xml:",omitempty"`
 	ProductListingDetails *ProductListingDetails `xml:",omitempty"`
-	ItemSpecifics         []ItemSpecifics        `xml:",omitempty"`
+	ItemSpecifics         map[string]string      `xml:",omitempty"`
 }
 
 func (c AddFixedPriceItem) CallName() string {
