@@ -14,12 +14,12 @@ type AddItem struct {
 	Title                 string `xml:",omitempty"`
 	Description           string `xml:",omitempty"`
 	StartPrice            string
-	BuyItNowPrice         string    `xml:",omitempty"`
-	ListingType           string    `xml:",omitempty"`
-	BrandMPN              *BrandMPN `xml:",omitempty"`
-	Quantity              uint      `xml:",omitempty"`
-	PaymentMethods        string    `xml:",omitempty"`
-	PayPalEmailAddress    string    `xml:",omitempty"`
+	BuyItNowPrice         string   `xml:",omitempty"`
+	ListingType           string   `xml:",omitempty"`
+	BrandMPN              BrandMPN `xml:",omitempty"`
+	Quantity              uint     `xml:",omitempty"`
+	PaymentMethods        string   `xml:",omitempty"`
+	PayPalEmailAddress    string   `xml:",omitempty"`
 	ListingDuration       string
 	ShippingDetails       *ShippingDetails `xml:",omitempty"`
 	PrimaryCategory       *PrimaryCategory
