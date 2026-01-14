@@ -18,7 +18,7 @@ type NameValueList struct {
 }
 
 type PictureDetails struct {
-	PictureURL string
+	PictureURL []string
 }
 
 type PrimaryCategory struct {
