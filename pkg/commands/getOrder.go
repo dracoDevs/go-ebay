@@ -19,10 +19,10 @@ func (c GetOrders) Body() interface{} {
 }
 
 func (c GetOrders) ParseResponse(r []byte) (ebay.EbayResponse, error) {
-	return ParseXMLResponse[GetOrderResponse](r)
+	return ParseXMLResponse[GetOrdersResponse](r)
 }
 
-type GetOrderResponse struct {
+type GetOrdersResponse struct {
 	BaseResponse
 	Item struct {
 		ItemID         string
