@@ -1,10 +1,6 @@
 package commands
 
-import (
-	"encoding/xml"
-
-	"github.com/dracoDevs/go-ebay/pkg/ebay"
-)
+import "github.com/dracoDevs/go-ebay/pkg/ebay"
 
 type EndItem struct {
 	ItemID       string       `xml:"ItemID"`
@@ -24,29 +20,15 @@ const (
 	Sold              EndingReason = "Sold"
 )
 
-func (c EndItem) CallName() string {
-	return "EndItem"
-}
+func (c EndItem) CallName() string { return "EndItem" }
 
-func (c EndItem) Body() interface{} {
-	return EndItem{
-		ItemID:       c.ItemID,
-		EndingReason: c.EndingReason,
-	}
-}
+func (c EndItem) Body() interface{} { return c }
 
 func (c EndItem) ParseResponse(r []byte) (ebay.EbayResponse, error) {
-	var xmlResponse EndItemResponse
-	err := xml.Unmarshal(r, &xmlResponse)
-	return xmlResponse, err
+	return ParseXMLResponse[EndItemResponse](r)
 }
 
 type EndItemResponse struct {
-	ebay.OtherEbayResponse
-
+	BaseResponse
 	EndTime string `xml:"EndTime"`
-}
-
-func (r EndItemResponse) ResponseErrors() ebay.EbayErrors {
-	return r.OtherEbayResponse.Errors
 }

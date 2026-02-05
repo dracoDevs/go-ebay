@@ -1,14 +1,6 @@
 package commands
 
-import (
-	"encoding/xml"
-
-	"github.com/dracoDevs/go-ebay/pkg/ebay"
-)
-
-type ReviseFixedPriceItemResponse struct {
-	ebay.OtherEbayResponse
-}
+import "github.com/dracoDevs/go-ebay/pkg/ebay"
 
 type ReviseFixedPriceItem struct {
 	ItemID                string
@@ -26,25 +18,17 @@ type ReviseFixedPriceItem struct {
 	ItemSpecifics         map[string]string      `xml:",omitempty"`
 }
 
-func (c ReviseFixedPriceItem) CallName() string {
-	return "ReviseFixedPriceItem"
-}
+func (c ReviseFixedPriceItem) CallName() string { return "ReviseFixedPriceItem" }
 
 func (c ReviseFixedPriceItem) Body() interface{} {
-	type Item struct {
-		ReviseFixedPriceItem
-	}
-
+	type Item struct{ ReviseFixedPriceItem }
 	return Item{c}
 }
 
 func (c ReviseFixedPriceItem) ParseResponse(r []byte) (ebay.EbayResponse, error) {
-	var xmlResponse ReviseFixedPriceItemResponse
-	err := xml.Unmarshal(r, &xmlResponse)
-
-	return xmlResponse, err
+	return ParseXMLResponse[ReviseFixedPriceItemResponse](r)
 }
 
-func (r ReviseFixedPriceItemResponse) ResponseErrors() ebay.EbayErrors {
-	return r.OtherEbayResponse.Errors
+type ReviseFixedPriceItemResponse struct {
+	BaseResponse
 }

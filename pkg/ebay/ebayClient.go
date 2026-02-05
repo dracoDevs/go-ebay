@@ -17,7 +17,7 @@ type EbayResponse interface {
 }
 
 type OtherEbayResponse struct {
-	Timestamp time.Time
+	Timestamp EbayTimestamp
 	Ack       string
 	Errors    []ebayResponseError
 }
@@ -36,6 +36,31 @@ func (r OtherEbayResponse) Failure() bool {
 
 func (r OtherEbayResponse) ResponseErrors() EbayErrors {
 	return r.Errors
+}
+
+type EbayTimestamp struct {
+	time.Time
+}
+
+func (t *EbayTimestamp) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var raw string
+	if err := d.DecodeElement(&raw, &start); err != nil {
+		return err
+	}
+
+	layouts := []string{
+		time.RFC3339,
+		"2006-01-02 15:04:05",
+	}
+
+	for _, layout := range layouts {
+		if parsed, err := time.Parse(layout, raw); err == nil {
+			t.Time = parsed
+			return nil
+		}
+	}
+
+	return fmt.Errorf("cannot parse time %q", raw)
 }
 
 func (c ebayRequest) MarshalXML(e *xml.Encoder, start xml.StartElement) error {

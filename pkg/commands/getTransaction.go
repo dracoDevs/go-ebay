@@ -1,10 +1,6 @@
 package commands
 
-import (
-	"encoding/xml"
-
-	"github.com/dracoDevs/go-ebay/pkg/ebay"
-)
+import "github.com/dracoDevs/go-ebay/pkg/ebay"
 
 type GetItemTransactions struct {
 	ItemID        string `xml:"ItemID"`
@@ -12,24 +8,17 @@ type GetItemTransactions struct {
 	NumberOfDays  int    `xml:"NumberOfDays"`
 }
 
-func (c GetItemTransactions) CallName() string {
-	return "GetItemTransactions"
-}
+func (c GetItemTransactions) CallName() string { return "GetItemTransactions" }
 
 func (c GetItemTransactions) Body() interface{} {
 	return GetItemTransactions{ItemID: c.ItemID, TransactionID: c.TransactionID}
 }
-
 func (c GetItemTransactions) ParseResponse(r []byte) (ebay.EbayResponse, error) {
-	var xmlResponse GetItemTransactionsResponse
-	err := xml.Unmarshal(r, &xmlResponse)
-
-	return xmlResponse, err
+	return ParseXMLResponse[GetItemTransactionsResponse](r)
 }
 
 type GetItemTransactionsResponse struct {
-	ebay.OtherEbayResponse
-
+	BaseResponse
 	HasMoreTransactions bool `xml:"HasMoreTransactions"`
 
 	Item struct {
@@ -125,8 +114,4 @@ type GetItemTransactionsResponse struct {
 			// Add more fields as needed from the full schema
 		} `xml:"Transaction,omitempty"`
 	} `xml:"TransactionArray"`
-}
-
-func (r GetItemTransactionsResponse) ResponseErrors() ebay.EbayErrors {
-	return r.OtherEbayResponse.Errors
 }

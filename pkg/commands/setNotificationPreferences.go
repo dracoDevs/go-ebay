@@ -1,10 +1,6 @@
 package commands
 
-import (
-	"encoding/xml"
-
-	"github.com/dracoDevs/go-ebay/pkg/ebay"
-)
+import "github.com/dracoDevs/go-ebay/pkg/ebay"
 
 type DeliveryURLDetail struct {
 	DeliveryURL     string
@@ -43,35 +39,24 @@ type UserDeliveryPreferenceArray struct {
 
 type SetNotificationPreferences struct {
 	ApplicationDeliveryPreferences *ApplicationDeliveryPreferences `xml:"ApplicationDeliveryPreferences,omitempty"`
-	DeliveryURLName                string                         `xml:"DeliveryURLName,omitempty"`
-	EventProperty                  []EventProperty                `xml:"EventProperty,omitempty"`
+	DeliveryURLName                string                          `xml:"DeliveryURLName,omitempty"`
+	EventProperty                  []EventProperty                 `xml:"EventProperty,omitempty"`
 	UserData                       *UserData                       `xml:"UserData,omitempty"`
 	UserDeliveryPreferenceArray    *UserDeliveryPreferenceArray    `xml:"UserDeliveryPreferenceArray,omitempty"`
-	ErrorLanguage                  string                         `xml:"ErrorLanguage,omitempty"`
-	MessageID                      string                         `xml:"MessageID,omitempty"`
-	Version                        string                         `xml:"Version,omitempty"`
-	WarningLevel                   string                         `xml:"WarningLevel,omitempty"`
+	ErrorLanguage                  string                          `xml:"ErrorLanguage,omitempty"`
+	MessageID                      string                          `xml:"MessageID,omitempty"`
+	Version                        string                          `xml:"Version,omitempty"`
+	WarningLevel                   string                          `xml:"WarningLevel,omitempty"`
 }
 
-func (c SetNotificationPreferences) CallName() string {
-	return "SetNotificationPreferences"
-}
+func (c SetNotificationPreferences) CallName() string { return "SetNotificationPreferences" }
 
-func (c SetNotificationPreferences) Body() interface{} {	
-	return c
-}
+func (c SetNotificationPreferences) Body() interface{} { return c }
 
 func (c SetNotificationPreferences) ParseResponse(r []byte) (ebay.EbayResponse, error) {
-	var xmlResponse SetNotificationPreferencesResponse
-	err := xml.Unmarshal(r, &xmlResponse)
-
-	return xmlResponse, err
+	return ParseXMLResponse[SetNotificationPreferencesResponse](r)
 }
 
 type SetNotificationPreferencesResponse struct {
-	ebay.OtherEbayResponse
-}
-
-func (r SetNotificationPreferencesResponse) ResponseErrors() ebay.EbayErrors {
-	return r.OtherEbayResponse.Errors
+	BaseResponse
 }

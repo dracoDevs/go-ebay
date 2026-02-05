@@ -47,21 +47,10 @@ func (e EbayConf) RunCommand(c Command) (EbayResponse, error) {
 		return OtherEbayResponse{}, err
 	}
 
-	if c.CallName() == "EndItem" || c.CallName() == "SetNotificationPreferences" || c.CallName() == "GetItemTransactions" || c.CallName() == "CompleteSale" {
+	if c.CallName() == "EndItem" || c.CallName() == "SetNotificationPreferences" || c.CallName() == "GetItemTransactions" || c.CallName() == "CompleteSale" || c.CallName() == "GetOrders" {
 		bodyStr := utils.RemoveTagXML(body.String(), c.CallName())
 		body = bytes.NewBufferString(bodyStr)
 	}
-
-	// xmlFileName := fmt.Sprintf("%s_%d.xml", c.CallName(), rand.Intn(100)) // Generates random digits each time
-	// file, err := os.Create(xmlFileName)
-	// if err != nil {
-	// 	return OtherEbayResponse{}, err
-	// }
-	// defer file.Close()
-
-	// if _, err := file.Write(body.Bytes()); err != nil {
-	// 	return OtherEbayResponse{}, err
-	// }
 
 	if e.Logger != nil {
 		e.Logger(body.String())
@@ -76,13 +65,8 @@ func (e EbayConf) RunCommand(c Command) (EbayResponse, error) {
 	req.Header.Add("X-EBAY-API-COMPATIBILITY-LEVEL", strconv.Itoa(1173))
 	req.Header.Add("Content-Type", "text/xml")
 
-	client := &http.Client{
-		// Transport: &http.Transport{
-		// 	Proxy: func(_ *http.Request) (*url.URL, error) {
-		// 		return url.Parse("http://127.0.0.1:8888")
-		// 	},
-		// },
-	}
+	client := &http.Client{}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		if urlErr, ok := err.(*url.Error); ok {

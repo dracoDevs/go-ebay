@@ -1,10 +1,6 @@
 package commands
 
-import (
-	"encoding/xml"
-
-	"github.com/dracoDevs/go-ebay/pkg/ebay"
-)
+import "github.com/dracoDevs/go-ebay/pkg/ebay"
 
 type AddItem struct {
 	Currency              string
@@ -30,31 +26,18 @@ type AddItem struct {
 	ItemSpecifics         []ItemSpecifics        `xml:",omitempty"`
 }
 
-func (c AddItem) CallName() string {
-	return "AddItem"
-}
-
-func (c AddItem) ParseResponse(r []byte) (ebay.EbayResponse, error) {
-	var xmlResponse AddItemResponse
-	err := xml.Unmarshal(r, &xmlResponse)
-
-	return xmlResponse, err
-}
+func (c AddItem) CallName() string { return "AddItem" }
 
 func (c AddItem) Body() interface{} {
-	type Item struct {
-		AddItem
-	}
-
+	type Item struct{ AddItem }
 	return Item{c}
 }
 
-type AddItemResponse struct {
-	ebay.OtherEbayResponse
-
-	ItemID string
+func (c AddItem) ParseResponse(r []byte) (ebay.EbayResponse, error) {
+	return ParseXMLResponse[AddItemResponse](r)
 }
 
-func (r AddItemResponse) ResponseErrors() ebay.EbayErrors {
-	return r.OtherEbayResponse.Errors
+type AddItemResponse struct {
+	BaseResponse
+	ItemID string
 }

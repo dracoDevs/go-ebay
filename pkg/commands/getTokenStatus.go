@@ -22,9 +22,7 @@ type GetTokenStatus struct {
 	WarningLevel  string   `xml:"WarningLevel,omitempty"`
 }
 
-func (c GetTokenStatus) CallName() string {
-	return "GetTokenStatus"
-}
+func (c GetTokenStatus) CallName() string { return "GetTokenStatus" }
 
 func (c GetTokenStatus) Body() interface{} {
 	out := c
@@ -35,22 +33,16 @@ func (c GetTokenStatus) Body() interface{} {
 }
 
 func (c GetTokenStatus) ParseResponse(r []byte) (ebay.EbayResponse, error) {
-	var resp GetTokenStatusResponse
-	err := xml.Unmarshal(r, &resp)
-	return resp, err
+	return ParseXMLResponse[GetTokenStatusResponse](r)
 }
 
 type GetTokenStatusResponse struct {
 	XMLName xml.Name `xml:"GetTokenStatusResponse"`
-	ebay.OtherEbayResponse
+	BaseResponse
 	Timestamp             string           `xml:"Timestamp,omitempty"`
 	Ack                   string           `xml:"Ack,omitempty"`
 	Version               string           `xml:"Version,omitempty"`
 	Build                 string           `xml:"Build,omitempty"`
 	TokenStatus           *TokenStatusResp `xml:"TokenStatus,omitempty"`
 	HardExpirationWarning string           `xml:"HardExpirationWarning,omitempty"`
-}
-
-func (r GetTokenStatusResponse) ResponseErrors() ebay.EbayErrors {
-	return r.OtherEbayResponse.Errors
 }

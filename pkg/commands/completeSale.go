@@ -1,10 +1,6 @@
 package commands
 
-import (
-	"encoding/xml"
-
-	"github.com/dracoDevs/go-ebay/pkg/ebay"
-)
+import "github.com/dracoDevs/go-ebay/pkg/ebay"
 
 type CompleteSale struct {
 	ItemID          *string   `xml:"ItemID,omitempty"`
@@ -23,30 +19,14 @@ type ShipmentTrackingDetails struct {
 	ShippingCarrierUsed    string `xml:"ShippingCarrierUsed"`
 }
 
-func (c CompleteSale) CallName() string {
-	return "CompleteSale"
-}
+func (c CompleteSale) CallName() string { return "CompleteSale" }
 
-func (c CompleteSale) Body() interface{} {
-	return CompleteSale{
-		ItemID:          c.ItemID,
-		Shipped:         c.Shipped,
-		TransactionID:   c.TransactionID,
-		Shipment:        c.Shipment,
-		OrderLineItemID: c.OrderLineItemID,
-	}
-}
+func (c CompleteSale) Body() interface{} { return c }
 
 func (c CompleteSale) ParseResponse(r []byte) (ebay.EbayResponse, error) {
-	var xmlResponse CompleteSaleResponse
-	err := xml.Unmarshal(r, &xmlResponse)
-	return xmlResponse, err
+	return ParseXMLResponse[CompleteSaleResponse](r)
 }
 
 type CompleteSaleResponse struct {
-	ebay.OtherEbayResponse
-}
-
-func (r CompleteSaleResponse) ResponseErrors() ebay.EbayErrors {
-	return r.OtherEbayResponse.Errors
+	BaseResponse
 }
