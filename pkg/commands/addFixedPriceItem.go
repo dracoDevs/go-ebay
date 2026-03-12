@@ -3,6 +3,7 @@ package commands
 import "github.com/dracoDevs/go-ebay/pkg/ebay"
 
 type AddFixedPriceItem struct {
+	AutoPay               bool   `xml:",omitempty"`
 	Currency              string
 	Country               string
 	DispatchTimeMax       int    `xml:",omitempty"`
