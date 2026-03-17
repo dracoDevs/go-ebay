@@ -23,7 +23,9 @@ type GetItemResponse struct {
 	BaseResponse
 	Item struct {
 		ItemID         string
+		Title          string
 		Quantity       int64
+		PictureDetails *PictureDetails
 		ListingDetails struct {
 			StartTime string
 		}
