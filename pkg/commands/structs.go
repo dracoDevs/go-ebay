@@ -19,7 +19,7 @@ type NameValueList struct {
 
 type PictureDetails struct {
 	PictureURL []string
-	GalleryURL string
+	GalleryURL string `xml:",omitempty"`
 }
 
 type PrimaryCategory struct {
