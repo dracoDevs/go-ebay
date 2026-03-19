@@ -20,6 +20,7 @@ func (c GetOrders) CallName() string { return "GetOrders" }
 
 func (c GetOrders) Body() interface{} {
 	type body struct {
+		XMLName              xml.Name      `xml:"GetOrders"`
 		NumberOfDays         int           `xml:"NumberOfDays,omitempty"`
 		IncludeFinalValueFee bool          `xml:"IncludeFinalValueFee,omitempty"`
 		OrderIDArray         *OrderIDArray `xml:"OrderIDArray,omitempty"`
