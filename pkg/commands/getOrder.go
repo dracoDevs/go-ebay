@@ -13,13 +13,22 @@ type OrderIDArray struct {
 type GetOrders struct {
 	NumberOfDays         int
 	IncludeFinalValueFee bool
-	OrderIDArray         OrderIDArray
+	OrderIDArray         *OrderIDArray
 }
 
 func (c GetOrders) CallName() string { return "GetOrders" }
 
 func (c GetOrders) Body() interface{} {
-	return c
+	type body struct {
+		NumberOfDays         int           `xml:"NumberOfDays,omitempty"`
+		IncludeFinalValueFee bool          `xml:"IncludeFinalValueFee,omitempty"`
+		OrderIDArray         *OrderIDArray `xml:"OrderIDArray,omitempty"`
+	}
+	return body{
+		NumberOfDays:         c.NumberOfDays,
+		IncludeFinalValueFee: c.IncludeFinalValueFee,
+		OrderIDArray:         c.OrderIDArray,
+	}
 }
 
 func (c GetOrders) ParseResponse(r []byte) (ebay.EbayResponse, error) {
