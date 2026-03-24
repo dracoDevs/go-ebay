@@ -1,5 +1,28 @@
 package commands
 
+import "encoding/xml"
+
+type Amount struct {
+	Value      float64 `xml:",chardata"`
+	CurrencyID string  `xml:"currencyID,attr"`
+}
+
+type BoolStr bool
+
+func (b *BoolStr) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var v string
+	if err := d.DecodeElement(&v, &start); err != nil {
+		return err
+	}
+	*b = (v == "true")
+	return nil
+}
+
+type Pagination struct {
+	EntriesPerPage int `xml:"EntriesPerPage"`
+	PageNumber     int `xml:"PageNumber"`
+}
+
 type Storefront struct {
 	StoreCategoryID string
 }

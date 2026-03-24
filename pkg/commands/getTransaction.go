@@ -11,7 +11,7 @@ type GetItemTransactions struct {
 func (c GetItemTransactions) CallName() string { return "GetItemTransactions" }
 
 func (c GetItemTransactions) Body() interface{} {
-	return GetItemTransactions{ItemID: c.ItemID, TransactionID: c.TransactionID}
+	return c
 }
 func (c GetItemTransactions) ParseResponse(r []byte) (ebay.EbayResponse, error) {
 	return ParseXMLResponse[GetItemTransactionsResponse](r)

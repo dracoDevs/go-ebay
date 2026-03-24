@@ -11,11 +11,6 @@ type ActiveListRequest struct {
 	Pagination *Pagination `xml:"Pagination,omitempty"`
 }
 
-type Pagination struct {
-	EntriesPerPage int `xml:"EntriesPerPage"`
-	PageNumber     int `xml:"PageNumber"`
-}
-
 func (c GetMyeBaySelling) CallName() string { return "GetMyeBaySelling" }
 
 func (c GetMyeBaySelling) Body() interface{} {

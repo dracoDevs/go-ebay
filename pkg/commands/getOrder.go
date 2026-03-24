@@ -190,18 +190,3 @@ type GetOrdersResponse struct {
 	} `xml:"OrderArray"`
 }
 
-type Amount struct {
-	Value      float64 `xml:",chardata"`
-	CurrencyID string  `xml:"currencyID,attr"`
-}
-
-type BoolStr bool
-
-func (b *BoolStr) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var v string
-	if err := d.DecodeElement(&v, &start); err != nil {
-		return err
-	}
-	*b = (v == "true")
-	return nil
-}

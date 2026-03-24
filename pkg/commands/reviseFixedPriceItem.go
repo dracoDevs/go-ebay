@@ -15,7 +15,7 @@ type ReviseFixedPriceItem struct {
 	PrimaryCategory       *PrimaryCategory
 	ReturnPolicy          *ReturnPolicy          `xml:",omitempty"`
 	ProductListingDetails *ProductListingDetails `xml:",omitempty"`
-	ItemSpecifics         map[string]string      `xml:",omitempty"`
+	ItemSpecifics         *ItemSpecifics         `xml:",omitempty"`
 }
 
 func (c ReviseFixedPriceItem) CallName() string { return "ReviseFixedPriceItem" }

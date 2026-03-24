@@ -24,14 +24,14 @@ type GetItemResponse struct {
 	Item struct {
 		ItemID         string
 		Title          string
-		Quantity       int64
+		Quantity       int
 		PictureDetails *PictureDetails
 		ListingDetails struct {
 			StartTime string
 		}
 		SellingStatus struct {
 			ListingStatus string
-			QuantitySold  int64
+			QuantitySold  int
 			CurrentPrice  float64
 		}
 	}
