@@ -47,7 +47,7 @@ func (e EbayConf) RunCommand(c Command) (EbayResponse, error) {
 		return OtherEbayResponse{}, err
 	}
 
-	if c.CallName() == "EndItem" || c.CallName() == "SetNotificationPreferences" || c.CallName() == "GetItemTransactions" || c.CallName() == "CompleteSale" || c.CallName() == "GetOrders" || c.CallName() == "GetMyeBaySelling" || c.CallName() == "GetMyMessages" {
+	if c.CallName() == "EndItem" || c.CallName() == "SetNotificationPreferences" || c.CallName() == "GetItemTransactions" || c.CallName() == "CompleteSale" || c.CallName() == "GetOrders" || c.CallName() == "GetMyeBaySelling" || c.CallName() == "GetMyMessages" || c.CallName() == "GetSellerList" {
 		bodyStr := utils.RemoveTagXML(body.String(), c.CallName())
 		body = bytes.NewBufferString(bodyStr)
 	}
