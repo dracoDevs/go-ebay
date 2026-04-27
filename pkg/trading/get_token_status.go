@@ -1,6 +1,4 @@
-package commands
-
-import "github.com/dracoDevs/go-ebay/pkg/ebay"
+package trading
 
 type TokenStatusResp struct {
 	Status         string `xml:"Status,omitempty"`
@@ -18,7 +16,7 @@ func (c GetTokenStatus) Body() interface{} {
 	return body{}
 }
 
-func (c GetTokenStatus) ParseResponse(r []byte) (ebay.EbayResponse, error) {
+func (c GetTokenStatus) ParseResponse(r []byte) (Response, error) {
 	return ParseXMLResponse[GetTokenStatusResponse](r)
 }
 

@@ -1,9 +1,7 @@
-package commands
+package trading
 
 import (
 	"encoding/xml"
-
-	"github.com/dracoDevs/go-ebay/pkg/ebay"
 )
 
 type OrderIDArray struct {
@@ -32,7 +30,7 @@ func (c GetOrders) Body() interface{} {
 	}
 }
 
-func (c GetOrders) ParseResponse(r []byte) (ebay.EbayResponse, error) {
+func (c GetOrders) ParseResponse(r []byte) (Response, error) {
 	return ParseXMLResponse[GetOrdersResponse](r)
 }
 
@@ -189,4 +187,3 @@ type GetOrdersResponse struct {
 		} `xml:"Order"`
 	} `xml:"OrderArray"`
 }
-

@@ -1,10 +1,8 @@
-package commands
+package trading
 
 import (
 	"encoding/xml"
 	"testing"
-
-	"github.com/dracoDevs/go-ebay/pkg/ebay"
 )
 
 // TestCallNames verifies every command returns the correct eBay API call name.
@@ -55,7 +53,7 @@ func TestBodyMarshalXML(t *testing.T) {
 		{"GetOrders", GetOrders{NumberOfDays: 30}},
 		{"GetTokenStatus", GetTokenStatus{}},
 		{"GetUser", GetUser{}},
-		{"ReviseFixedPriceItem", ReviseFixedPriceItem{ItemID: "123", Quantity: 5}},
+		{"ReviseFixedPriceItem", ReviseFixedPriceItem{ItemID: "123", Quantity: UintPtr(5)}},
 		{"SetNotificationPreferences", SetNotificationPreferences{}},
 	}
 
@@ -73,7 +71,7 @@ func TestBodyMarshalXML(t *testing.T) {
 func TestParseResponseSuccess(t *testing.T) {
 	tests := []struct {
 		name    string
-		command ebay.Command
+		command Command
 		xml     string
 	}{
 		{
@@ -416,4 +414,3 @@ func TestBoolStrUnmarshal(t *testing.T) {
 		}
 	}
 }
-

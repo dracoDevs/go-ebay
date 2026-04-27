@@ -1,4 +1,4 @@
-package ebay
+package trading
 
 import (
 	"encoding/xml"
@@ -16,13 +16,13 @@ type emptyBody struct{}
 type stubCommand struct {
 	callName string
 	body     interface{}
-	response EbayResponse
+	response Response
 	parseErr error
 }
 
-func (c stubCommand) CallName() string                              { return c.callName }
-func (c stubCommand) Body() interface{}                             { return c.body }
-func (c stubCommand) ParseResponse(r []byte) (EbayResponse, error) { return c.response, c.parseErr }
+func (c stubCommand) CallName() string                         { return c.callName }
+func (c stubCommand) Body() interface{}                        { return c.body }
+func (c stubCommand) ParseResponse(r []byte) (Response, error) { return c.response, c.parseErr }
 
 func TestRunCommandSuccess(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +52,7 @@ func TestRunCommandSuccess(t *testing.T) {
 	}))
 	defer server.Close()
 
-	conf := EbayConf{
+	conf := Conf{
 		baseUrl:   server.URL,
 		DevId:     "dev123",
 		AppId:     "app123",
@@ -64,7 +64,7 @@ func TestRunCommandSuccess(t *testing.T) {
 	cmd := stubCommand{
 		callName: "TestCall",
 		body:     emptyBody{},
-		response: OtherEbayResponse{Ack: "Success"},
+		response: GenericResponse{Ack: "Success"},
 	}
 
 	resp, err := conf.RunCommand(cmd)
@@ -83,7 +83,7 @@ func TestRunCommandHTTPError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	conf := EbayConf{
+	conf := Conf{
 		baseUrl:   server.URL,
 		DevId:     "dev",
 		AppId:     "app",
@@ -94,7 +94,7 @@ func TestRunCommandHTTPError(t *testing.T) {
 	cmd := stubCommand{
 		callName: "TestCall",
 		body:     emptyBody{},
-		response: OtherEbayResponse{},
+		response: GenericResponse{},
 	}
 
 	_, err := conf.RunCommand(cmd)
@@ -110,7 +110,7 @@ func TestRunCommandFailureAck(t *testing.T) {
 	}))
 	defer server.Close()
 
-	conf := EbayConf{
+	conf := Conf{
 		baseUrl:   server.URL,
 		DevId:     "dev",
 		AppId:     "app",
@@ -118,9 +118,9 @@ func TestRunCommandFailureAck(t *testing.T) {
 		AuthToken: "token",
 	}
 
-	failResp := OtherEbayResponse{
+	failResp := GenericResponse{
 		Ack: "Failure",
-		Errors: []ebayResponseError{
+		Errors: []responseError{
 			{ShortMessage: "Bad", LongMessage: "Bad request", ErrorCode: 100},
 		},
 	}
@@ -141,7 +141,7 @@ func TestRunCommandFailureAck(t *testing.T) {
 }
 
 func TestSandboxAndProduction(t *testing.T) {
-	conf := EbayConf{}
+	conf := Conf{}
 
 	sandbox := conf.Sandbox()
 	if sandbox.baseUrl != "https://api.sandbox.ebay.com" {
@@ -172,7 +172,7 @@ func TestRunCommandSendsAuthToken(t *testing.T) {
 	}))
 	defer server.Close()
 
-	conf := EbayConf{
+	conf := Conf{
 		baseUrl:   server.URL,
 		DevId:     "dev",
 		AppId:     "app",
@@ -183,7 +183,7 @@ func TestRunCommandSendsAuthToken(t *testing.T) {
 	cmd := stubCommand{
 		callName: "TestCall",
 		body:     emptyBody{},
-		response: OtherEbayResponse{Ack: "Success"},
+		response: GenericResponse{Ack: "Success"},
 	}
 
 	_, err := conf.RunCommand(cmd)
@@ -200,7 +200,7 @@ func TestRunCommandLogger(t *testing.T) {
 	defer server.Close()
 
 	logCalls := 0
-	conf := EbayConf{
+	conf := Conf{
 		baseUrl:   server.URL,
 		DevId:     "dev",
 		AppId:     "app",
@@ -214,7 +214,7 @@ func TestRunCommandLogger(t *testing.T) {
 	cmd := stubCommand{
 		callName: "TestCall",
 		body:     emptyBody{},
-		response: OtherEbayResponse{Ack: "Success"},
+		response: GenericResponse{Ack: "Success"},
 	}
 
 	_, err := conf.RunCommand(cmd)
@@ -227,7 +227,7 @@ func TestRunCommandLogger(t *testing.T) {
 	}
 }
 
-func TestEbayTimestampUnmarshal(t *testing.T) {
+func TestTimestampUnmarshal(t *testing.T) {
 	tests := []struct {
 		name string
 		xml  string
@@ -240,7 +240,7 @@ func TestEbayTimestampUnmarshal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var v struct {
-				T EbayTimestamp `xml:"T"`
+				T Timestamp `xml:"T"`
 			}
 			if err := xml.Unmarshal([]byte(`<R>`+tt.xml+`</R>`), &v); err != nil {
 				t.Fatalf("Unmarshal error: %v", err)
@@ -254,7 +254,7 @@ func TestEbayTimestampUnmarshal(t *testing.T) {
 
 	t.Run("invalid format", func(t *testing.T) {
 		var v struct {
-			T EbayTimestamp `xml:"T"`
+			T Timestamp `xml:"T"`
 		}
 		err := xml.Unmarshal([]byte(`<R><T>not-a-date</T></R>`), &v)
 		if err == nil {
@@ -262,4 +262,3 @@ func TestEbayTimestampUnmarshal(t *testing.T) {
 		}
 	})
 }
-

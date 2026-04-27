@@ -1,6 +1,4 @@
-package commands
-
-import "github.com/dracoDevs/go-ebay/pkg/ebay"
+package trading
 
 type RelistFixedPriceItem struct {
 	ItemID   string
@@ -14,7 +12,7 @@ func (c RelistFixedPriceItem) Body() interface{} {
 	return Item{c}
 }
 
-func (c RelistFixedPriceItem) ParseResponse(r []byte) (ebay.EbayResponse, error) {
+func (c RelistFixedPriceItem) ParseResponse(r []byte) (Response, error) {
 	return ParseXMLResponse[RelistFixedPriceItemResponse](r)
 }
 

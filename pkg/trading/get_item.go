@@ -1,6 +1,4 @@
-package commands
-
-import "github.com/dracoDevs/go-ebay/pkg/ebay"
+package trading
 
 type GetItem struct {
 	ItemID string
@@ -15,7 +13,7 @@ func (c GetItem) Body() interface{} {
 	return ItemID{c.ItemID}
 }
 
-func (c GetItem) ParseResponse(r []byte) (ebay.EbayResponse, error) {
+func (c GetItem) ParseResponse(r []byte) (Response, error) {
 	return ParseXMLResponse[GetItemResponse](r)
 }
 

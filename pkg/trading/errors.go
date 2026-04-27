@@ -1,13 +1,13 @@
-package ebay
+package trading
 
 import (
 	"fmt"
 	"strings"
 )
 
-type EbayErrors []ebayResponseError
+type Errors []responseError
 
-func (err EbayErrors) Error() string {
+func (err Errors) Error() string {
 	var errs []string
 
 	for _, e := range err {
@@ -17,7 +17,7 @@ func (err EbayErrors) Error() string {
 	return strings.Join(errs, ", ")
 }
 
-func (errs EbayErrors) RevisionError() bool {
+func (errs Errors) RevisionError() bool {
 	for _, err := range errs {
 		if err.ErrorCode == 10039 || err.ErrorCode == 10029 || err.ErrorCode == 21916916 || err.ErrorCode == 21916923 || err.ErrorCode == 21919028 {
 			return true
@@ -27,7 +27,7 @@ func (errs EbayErrors) RevisionError() bool {
 	return false
 }
 
-func (errs EbayErrors) ListingEnded() bool {
+func (errs Errors) ListingEnded() bool {
 	for _, err := range errs {
 		if err.ErrorCode == 291 || err.ErrorCode == 240 {
 			return true
@@ -37,7 +37,7 @@ func (errs EbayErrors) ListingEnded() bool {
 	return false
 }
 
-func (errs EbayErrors) InvalidAuthToken() bool {
+func (errs Errors) InvalidAuthToken() bool {
 	for _, err := range errs {
 		if err.ErrorCode == 931 {
 			return true
@@ -47,7 +47,7 @@ func (errs EbayErrors) InvalidAuthToken() bool {
 	return false
 }
 
-func (errs EbayErrors) ListingDeleted() bool {
+func (errs Errors) ListingDeleted() bool {
 	for _, err := range errs {
 		if err.ErrorCode == 17 {
 			return true

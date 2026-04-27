@@ -1,6 +1,4 @@
-package commands
-
-import "github.com/dracoDevs/go-ebay/pkg/ebay"
+package trading
 
 type GetMyMessages struct {
 	MessageIDs  MessageIDs
@@ -17,7 +15,7 @@ func (c GetMyMessages) Body() interface{} {
 	return c
 }
 
-func (c GetMyMessages) ParseResponse(r []byte) (ebay.EbayResponse, error) {
+func (c GetMyMessages) ParseResponse(r []byte) (Response, error) {
 	return ParseXMLResponse[GetMyMessagesResponse](r)
 }
 

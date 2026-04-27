@@ -1,6 +1,4 @@
-package commands
-
-import "github.com/dracoDevs/go-ebay/pkg/ebay"
+package trading
 
 type AddItem struct {
 	Currency              string
@@ -33,7 +31,7 @@ func (c AddItem) Body() interface{} {
 	return Item{c}
 }
 
-func (c AddItem) ParseResponse(r []byte) (ebay.EbayResponse, error) {
+func (c AddItem) ParseResponse(r []byte) (Response, error) {
 	return ParseXMLResponse[AddItemResponse](r)
 }
 

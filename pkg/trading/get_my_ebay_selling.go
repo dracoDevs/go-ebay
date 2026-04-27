@@ -1,6 +1,4 @@
-package commands
-
-import "github.com/dracoDevs/go-ebay/pkg/ebay"
+package trading
 
 type GetMyeBaySelling struct {
 	ActiveList *ActiveListRequest `xml:"ActiveList,omitempty"`
@@ -17,7 +15,7 @@ func (c GetMyeBaySelling) Body() interface{} {
 	return c
 }
 
-func (c GetMyeBaySelling) ParseResponse(r []byte) (ebay.EbayResponse, error) {
+func (c GetMyeBaySelling) ParseResponse(r []byte) (Response, error) {
 	return ParseXMLResponse[GetMyeBaySellingResponse](r)
 }
 

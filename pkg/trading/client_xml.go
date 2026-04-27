@@ -1,4 +1,4 @@
-package ebay
+package trading
 
 import (
 	"encoding/xml"
@@ -6,23 +6,23 @@ import (
 	"time"
 )
 
-type ebayRequest struct {
-	conf    EbayConf
+type request struct {
+	conf    Conf
 	command Command
 }
 
-type EbayResponse interface {
+type Response interface {
 	Failure() bool
-	ResponseErrors() EbayErrors
+	ResponseErrors() Errors
 }
 
-type OtherEbayResponse struct {
-	Timestamp EbayTimestamp
+type GenericResponse struct {
+	Timestamp Timestamp
 	Ack       string
-	Errors    []ebayResponseError
+	Errors    []responseError
 }
 
-type ebayResponseError struct {
+type responseError struct {
 	ShortMessage        string
 	LongMessage         string
 	ErrorCode           int
@@ -30,19 +30,19 @@ type ebayResponseError struct {
 	ErrorClassification string
 }
 
-func (r OtherEbayResponse) Failure() bool {
+func (r GenericResponse) Failure() bool {
 	return r.Ack == "Failure"
 }
 
-func (r OtherEbayResponse) ResponseErrors() EbayErrors {
+func (r GenericResponse) ResponseErrors() Errors {
 	return r.Errors
 }
 
-type EbayTimestamp struct {
+type Timestamp struct {
 	time.Time
 }
 
-func (t *EbayTimestamp) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+func (t *Timestamp) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	var raw string
 	if err := d.DecodeElement(&raw, &start); err != nil {
 		return err
@@ -63,7 +63,7 @@ func (t *EbayTimestamp) UnmarshalXML(d *xml.Decoder, start xml.StartElement) err
 	return fmt.Errorf("cannot parse time %q", raw)
 }
 
-func (c ebayRequest) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+func (c request) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	startElement := xml.StartElement{
 		Name: xml.Name{
 			Space: "urn:ebay:apis:eBLBaseComponents",

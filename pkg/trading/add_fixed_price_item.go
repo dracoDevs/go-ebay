@@ -1,9 +1,7 @@
-package commands
-
-import "github.com/dracoDevs/go-ebay/pkg/ebay"
+package trading
 
 type AddFixedPriceItem struct {
-	AutoPay               bool   `xml:",omitempty"`
+	AutoPay               bool `xml:",omitempty"`
 	Currency              string
 	Country               string
 	DispatchTimeMax       int    `xml:",omitempty"`
@@ -34,7 +32,7 @@ func (c AddFixedPriceItem) Body() interface{} {
 	return Item{c}
 }
 
-func (c AddFixedPriceItem) ParseResponse(r []byte) (ebay.EbayResponse, error) {
+func (c AddFixedPriceItem) ParseResponse(r []byte) (Response, error) {
 	return ParseXMLResponse[AddFixedPriceItemResponse](r)
 }
 

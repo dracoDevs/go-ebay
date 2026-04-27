@@ -1,6 +1,4 @@
-package commands
-
-import "github.com/dracoDevs/go-ebay/pkg/ebay"
+package trading
 
 type DeliveryURLDetail struct {
 	DeliveryURL     string
@@ -53,7 +51,7 @@ func (c SetNotificationPreferences) CallName() string { return "SetNotificationP
 
 func (c SetNotificationPreferences) Body() interface{} { return c }
 
-func (c SetNotificationPreferences) ParseResponse(r []byte) (ebay.EbayResponse, error) {
+func (c SetNotificationPreferences) ParseResponse(r []byte) (Response, error) {
 	return ParseXMLResponse[SetNotificationPreferencesResponse](r)
 }
 

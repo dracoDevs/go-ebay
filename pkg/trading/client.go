@@ -1,4 +1,4 @@
-package ebay
+package trading
 
 import (
 	"bytes"
@@ -15,10 +15,10 @@ import (
 type Command interface {
 	Body() interface{}
 	CallName() string
-	ParseResponse([]byte) (EbayResponse, error)
+	ParseResponse([]byte) (Response, error)
 }
 
-type EbayConf struct {
+type Conf struct {
 	baseUrl string
 
 	DevId, AppId, CertId string
@@ -27,24 +27,24 @@ type EbayConf struct {
 	Logger               func(...interface{})
 }
 
-func (e EbayConf) Sandbox() EbayConf {
+func (e Conf) Sandbox() Conf {
 	e.baseUrl = "https://api.sandbox.ebay.com"
 	return e
 }
 
-func (e EbayConf) Production() EbayConf {
+func (e Conf) Production() Conf {
 	e.baseUrl = "https://api.ebay.com"
 	return e
 }
 
-func (e EbayConf) RunCommand(c Command) (EbayResponse, error) {
-	ec := ebayRequest{conf: e, command: c}
+func (e Conf) RunCommand(c Command) (Response, error) {
+	ec := request{conf: e, command: c}
 
 	body := new(bytes.Buffer)
 	body.Write([]byte(xml.Header))
 
 	if err := xml.NewEncoder(body).Encode(ec); err != nil {
-		return OtherEbayResponse{}, err
+		return GenericResponse{}, err
 	}
 
 	if c.CallName() == "EndItem" || c.CallName() == "SetNotificationPreferences" || c.CallName() == "GetItemTransactions" || c.CallName() == "CompleteSale" || c.CallName() == "GetOrders" || c.CallName() == "GetMyeBaySelling" || c.CallName() == "GetMyMessages" || c.CallName() == "GetSellerList" {
@@ -70,16 +70,16 @@ func (e EbayConf) RunCommand(c Command) (EbayResponse, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		if urlErr, ok := err.(*url.Error); ok {
-			return OtherEbayResponse{}, urlErr
+			return GenericResponse{}, urlErr
 		}
-		return OtherEbayResponse{}, err
+		return GenericResponse{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		httpErr := httpError{statusCode: resp.StatusCode}
 		httpErr.body, _ = io.ReadAll(resp.Body)
-		return OtherEbayResponse{}, httpErr
+		return GenericResponse{}, httpErr
 	}
 
 	bodyContents, _ := io.ReadAll(resp.Body)
