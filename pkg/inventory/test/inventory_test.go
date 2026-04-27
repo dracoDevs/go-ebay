@@ -179,15 +179,15 @@ func TestGetOffer(t *testing.T) {
 	defer server.Close()
 
 	c := inventory.NewClient(auth.StaticToken("ACCESS"), inventory.WithBaseURL(server.URL))
-	offer, raw, err := c.GetOffer(context.Background(), "O1")
+	offer, err := c.GetOffer(context.Background(), "O1")
 	if err != nil {
 		t.Fatalf("GetOffer: %v", err)
 	}
 	if offer.OfferID != "O1" || offer.SKU != "S1" || offer.AvailableQty != 3 {
 		t.Errorf("offer = %+v", offer)
 	}
-	if len(raw) == 0 {
-		t.Error("expected non-empty raw")
+	if len(offer.Raw) == 0 {
+		t.Error("expected non-empty Raw")
 	}
 }
 
@@ -202,7 +202,7 @@ func TestGetInventoryItem(t *testing.T) {
 	defer server.Close()
 
 	c := inventory.NewClient(auth.StaticToken("ACCESS"), inventory.WithBaseURL(server.URL))
-	it, _, err := c.GetInventoryItem(context.Background(), "sku-with-dashes")
+	it, err := c.GetInventoryItem(context.Background(), "sku-with-dashes")
 	if err != nil {
 		t.Fatalf("GetInventoryItem: %v", err)
 	}
@@ -219,7 +219,7 @@ func TestGetOfferPropagatesNonOK(t *testing.T) {
 	defer server.Close()
 
 	c := inventory.NewClient(auth.StaticToken("ACCESS"), inventory.WithBaseURL(server.URL))
-	_, _, err := c.GetOffer(context.Background(), "missing")
+	_, err := c.GetOffer(context.Background(), "missing")
 	if err == nil || !strings.Contains(err.Error(), "404") {
 		t.Errorf("expected 404, got %v", err)
 	}

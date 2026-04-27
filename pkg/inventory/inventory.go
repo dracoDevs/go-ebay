@@ -5,37 +5,38 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/dracoDevs/go-ebay/pkg/auth"
+	"github.com/dracoDevs/go-ebay/pkg/internal/rest"
 )
 
 const baseURL = "https://api.ebay.com/sell/inventory/v1"
 
 type Client struct {
-	tokenSource auth.TokenSource
-	httpClient  *http.Client
-	baseURL     string
+	doer rest.Doer
 }
 
 type Option func(*Client)
 
 func WithHTTPClient(c *http.Client) Option {
-	return func(cl *Client) { cl.httpClient = c }
+	return func(cl *Client) { cl.doer.HTTPClient = c }
 }
 
 func WithBaseURL(u string) Option {
-	return func(cl *Client) { cl.baseURL = u }
+	return func(cl *Client) { cl.doer.BaseURL = u }
 }
 
 func NewClient(src auth.TokenSource, opts ...Option) *Client {
 	c := &Client{
-		tokenSource: src,
-		httpClient:  &http.Client{Timeout: 30 * time.Second},
-		baseURL:     baseURL,
+		doer: rest.Doer{
+			TokenSource: src,
+			HTTPClient:  &http.Client{Timeout: 30 * time.Second},
+			BaseURL:     baseURL,
+			ErrPrefix:   "inventory:",
+		},
 	}
 	for _, o := range opts {
 		o(c)
@@ -94,25 +95,24 @@ func (c *Client) BulkMigrateListings(ctx context.Context, listingIDs []string) (
 	}
 	body, _ := json.Marshal(bulkMigrateRequest{Requests: reqs})
 
-	resp, raw, err := c.do(ctx, http.MethodPost, "/bulk_migrate_listing", bytes.NewReader(body), "application/json")
+	res, err := c.doer.Do(ctx, http.MethodPost, "/bulk_migrate_listing", bytes.NewReader(body), "application/json")
 	if err != nil {
 		return nil, err
 	}
 
 	var out bulkMigrateResponse
-	if decodeErr := json.Unmarshal(raw, &out); decodeErr == nil && len(out.Responses) > 0 {
+	if decodeErr := json.Unmarshal(res.Body, &out); decodeErr == nil && len(out.Responses) > 0 {
 		return out.Responses, nil
 	}
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusMultiStatus {
-		return nil, fmt.Errorf("inventory: bulkMigrateListing %d: %s", resp.StatusCode, string(raw))
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusMultiStatus {
+		return nil, fmt.Errorf("inventory: bulkMigrateListing %d: %s", res.StatusCode, string(res.Body))
 	}
 	return out.Responses, nil
 }
 
-// PriceQuantityUpdate requires SKU when Quantity is set so the inventory
-// item's shipToLocationAvailability is bumped alongside the offer; without
-// that, eBay caps live qty at min(offer.qty, sku.qty) and the revise can
-// silently no-op.
+// Quantity requires SKU so the inventory item's shipToLocationAvailability
+// is bumped alongside the offer; without that, eBay caps live qty at
+// min(offer.qty, sku.qty) and the revise can silently no-op.
 type PriceQuantityUpdate struct {
 	OfferID     string
 	SKU         string
@@ -175,11 +175,7 @@ func (c *Client) BulkUpdatePriceQuantity(ctx context.Context, updates []PriceQua
 			return nil, fmt.Errorf("inventory: offer %s: sku is required when updating quantity", u.OfferID)
 		}
 
-		o := offerPriceQuantity{OfferID: u.OfferID}
-		if u.Quantity != nil {
-			q := *u.Quantity
-			o.AvailableQuantity = &q
-		}
+		o := offerPriceQuantity{OfferID: u.OfferID, AvailableQuantity: u.Quantity}
 		if u.Price != nil {
 			cur := u.CurrencyISO
 			if cur == "" {
@@ -199,18 +195,18 @@ func (c *Client) BulkUpdatePriceQuantity(ctx context.Context, updates []PriceQua
 	}
 
 	body, _ := json.Marshal(bulkUpdatePQRequest{Requests: requests})
-	resp, raw, err := c.do(ctx, http.MethodPost, "/bulk_update_price_quantity", bytes.NewReader(body), "application/json")
+	res, err := c.doer.Do(ctx, http.MethodPost, "/bulk_update_price_quantity", bytes.NewReader(body), "application/json")
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusMultiStatus {
-		return nil, fmt.Errorf("inventory: bulkUpdatePriceQuantity %d: %s", resp.StatusCode, string(raw))
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusMultiStatus {
+		return nil, fmt.Errorf("inventory: bulkUpdatePriceQuantity %d: %s", res.StatusCode, string(res.Body))
 	}
 
 	var out bulkUpdatePQResponse
-	if err := json.Unmarshal(raw, &out); err != nil {
-		return nil, fmt.Errorf("inventory: decode bulkUpdatePriceQuantity: %w (body: %s)", err, string(raw))
+	if err := json.Unmarshal(res.Body, &out); err != nil {
+		return nil, fmt.Errorf("inventory: decode bulkUpdatePriceQuantity: %w (body: %s)", err, string(res.Body))
 	}
 	return out.Responses, nil
 }
@@ -236,23 +232,23 @@ type MoneyAmount struct {
 	Currency string `json:"currency"`
 }
 
-func (c *Client) GetOffer(ctx context.Context, offerID string) (*Offer, []byte, error) {
+func (c *Client) GetOffer(ctx context.Context, offerID string) (*Offer, error) {
 	if offerID == "" {
-		return nil, nil, fmt.Errorf("inventory: offerID is required")
+		return nil, fmt.Errorf("inventory: offerID is required")
 	}
-	resp, raw, err := c.do(ctx, http.MethodGet, "/offer/"+url.PathEscape(offerID), nil, "")
+	res, err := c.doer.Do(ctx, http.MethodGet, "/offer/"+url.PathEscape(offerID), nil, "")
 	if err != nil {
-		return nil, raw, err
+		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, raw, fmt.Errorf("inventory: getOffer %d: %s", resp.StatusCode, string(raw))
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("inventory: getOffer %d: %s", res.StatusCode, string(res.Body))
 	}
 	var out Offer
-	if err := json.Unmarshal(raw, &out); err != nil {
-		return nil, raw, fmt.Errorf("inventory: decode getOffer: %w", err)
+	if err := json.Unmarshal(res.Body, &out); err != nil {
+		return nil, fmt.Errorf("inventory: decode getOffer: %w", err)
 	}
-	out.Raw = raw
-	return &out, raw, nil
+	out.Raw = res.Body
+	return &out, nil
 }
 
 type InventoryItem struct {
@@ -275,45 +271,21 @@ type InventoryItemProduct struct {
 	UPC         []string `json:"upc,omitempty"`
 }
 
-func (c *Client) GetInventoryItem(ctx context.Context, sku string) (*InventoryItem, []byte, error) {
+func (c *Client) GetInventoryItem(ctx context.Context, sku string) (*InventoryItem, error) {
 	if sku == "" {
-		return nil, nil, fmt.Errorf("inventory: sku is required")
+		return nil, fmt.Errorf("inventory: sku is required")
 	}
-	resp, raw, err := c.do(ctx, http.MethodGet, "/inventory_item/"+url.PathEscape(sku), nil, "")
+	res, err := c.doer.Do(ctx, http.MethodGet, "/inventory_item/"+url.PathEscape(sku), nil, "")
 	if err != nil {
-		return nil, raw, err
+		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, raw, fmt.Errorf("inventory: getInventoryItem %d: %s", resp.StatusCode, string(raw))
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("inventory: getInventoryItem %d: %s", res.StatusCode, string(res.Body))
 	}
 	var out InventoryItem
-	if err := json.Unmarshal(raw, &out); err != nil {
-		return nil, raw, fmt.Errorf("inventory: decode getInventoryItem: %w", err)
+	if err := json.Unmarshal(res.Body, &out); err != nil {
+		return nil, fmt.Errorf("inventory: decode getInventoryItem: %w", err)
 	}
-	out.Raw = raw
-	return &out, raw, nil
-}
-
-func (c *Client) do(ctx context.Context, method, path string, body io.Reader, contentType string) (*http.Response, []byte, error) {
-	tok, err := c.tokenSource.Token(ctx)
-	if err != nil {
-		return nil, nil, fmt.Errorf("inventory: token: %w", err)
-	}
-	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("inventory: build request: %w", err)
-	}
-	req.Header.Set("Authorization", "Bearer "+tok)
-	if contentType != "" {
-		req.Header.Set("Content-Type", contentType)
-	}
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, nil, fmt.Errorf("inventory: %s %s: %w", method, path, err)
-	}
-	defer resp.Body.Close()
-	raw, _ := io.ReadAll(resp.Body)
-	return resp, raw, nil
+	out.Raw = res.Body
+	return &out, nil
 }

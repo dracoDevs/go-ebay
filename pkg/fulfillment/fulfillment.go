@@ -4,43 +4,52 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/dracoDevs/go-ebay/pkg/auth"
+	"github.com/dracoDevs/go-ebay/pkg/internal/rest"
 )
 
 const baseURL = "https://api.ebay.com/sell/fulfillment/v1"
 
+const (
+	MarketplaceUS = "EBAY_US"
+	MarketplaceGB = "EBAY_GB"
+	MarketplaceCA = "EBAY_CA"
+	MarketplaceAU = "EBAY_AU"
+	MarketplaceDE = "EBAY_DE"
+)
+
 type Client struct {
-	tokenSource auth.TokenSource
-	httpClient  *http.Client
-	baseURL     string
-	marketplace string
+	doer rest.Doer
 }
 
 type Option func(*Client)
 
 func WithHTTPClient(c *http.Client) Option {
-	return func(cl *Client) { cl.httpClient = c }
+	return func(cl *Client) { cl.doer.HTTPClient = c }
 }
 
 func WithBaseURL(u string) Option {
-	return func(cl *Client) { cl.baseURL = u }
+	return func(cl *Client) { cl.doer.BaseURL = u }
 }
 
 func WithMarketplace(m string) Option {
-	return func(cl *Client) { cl.marketplace = m }
+	return func(cl *Client) { cl.doer.DefaultHeaders["X-EBAY-C-MARKETPLACE-ID"] = m }
 }
 
 func NewClient(src auth.TokenSource, opts ...Option) *Client {
 	c := &Client{
-		tokenSource: src,
-		httpClient:  &http.Client{Timeout: 30 * time.Second},
-		baseURL:     baseURL,
-		marketplace: "EBAY_US",
+		doer: rest.Doer{
+			TokenSource:    src,
+			HTTPClient:     &http.Client{Timeout: 30 * time.Second},
+			BaseURL:        baseURL,
+			ErrPrefix:      "fulfillment:",
+			DefaultHeaders: map[string]string{"X-EBAY-C-MARKETPLACE-ID": MarketplaceUS},
+		},
 	}
 	for _, o := range opts {
 		o(c)
@@ -134,8 +143,7 @@ func (m Money) FloatValue() float64 {
 	if m.Value == "" {
 		return 0
 	}
-	var f float64
-	_, _ = fmt.Sscanf(m.Value, "%f", &f)
+	f, _ := strconv.ParseFloat(m.Value, 64)
 	return f
 }
 
@@ -143,39 +151,17 @@ func (c *Client) GetOrder(ctx context.Context, orderID string) (*Order, error) {
 	if orderID == "" {
 		return nil, fmt.Errorf("fulfillment: orderID is required")
 	}
-
-	tok, err := c.tokenSource.Token(ctx)
+	res, err := c.doer.Do(ctx, http.MethodGet, "/order/"+url.PathEscape(orderID), nil, "")
 	if err != nil {
-		return nil, fmt.Errorf("fulfillment: token: %w", err)
+		return nil, err
 	}
-
-	u := c.baseURL + "/order/" + url.PathEscape(orderID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	if err != nil {
-		return nil, fmt.Errorf("fulfillment: build getOrder request: %w", err)
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("fulfillment: getOrder %d: %s", res.StatusCode, string(res.Body))
 	}
-	req.Header.Set("Authorization", "Bearer "+tok)
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("X-EBAY-C-MARKETPLACE-ID", c.marketplace)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("fulfillment: getOrder http: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("fulfillment: read getOrder body: %w", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("fulfillment: getOrder %d: %s", resp.StatusCode, string(body))
-	}
-
 	var out Order
-	if err := json.Unmarshal(body, &out); err != nil {
+	if err := json.Unmarshal(res.Body, &out); err != nil {
 		return nil, fmt.Errorf("fulfillment: decode getOrder: %w", err)
 	}
-	out.Raw = body
+	out.Raw = res.Body
 	return &out, nil
 }
