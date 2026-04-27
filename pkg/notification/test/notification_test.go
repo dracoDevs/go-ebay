@@ -1,4 +1,4 @@
-package notification
+package test
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/dracoDevs/go-ebay/pkg/auth"
+	"github.com/dracoDevs/go-ebay/pkg/notification"
 )
 
 func TestListTopicsFollowsPagination(t *testing.T) {
@@ -23,8 +24,7 @@ func TestListTopicsFollowsPagination(t *testing.T) {
 				t.Errorf("first call path = %q", r.URL.Path)
 			}
 			next := "http://" + r.Host + "/topic?cursor=2"
-			fmt := `{"topics":[{"topicId":"T1","status":"ENABLED"}],"next":%q}`
-			_, _ = w.Write([]byte(jsonF(fmt, next)))
+			_, _ = w.Write([]byte(`{"topics":[{"topicId":"T1","status":"ENABLED"}],"next":"` + next + `"}`))
 		case 2:
 			if r.URL.Query().Get("cursor") != "2" {
 				t.Errorf("second call cursor = %q", r.URL.Query().Get("cursor"))
@@ -36,7 +36,7 @@ func TestListTopicsFollowsPagination(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("ACCESS"), WithBaseURL(server.URL))
+	c := notification.NewClient(auth.StaticToken("ACCESS"), notification.WithBaseURL(server.URL))
 	topics, err := c.ListTopics(context.Background())
 	if err != nil {
 		t.Fatalf("ListTopics: %v", err)
@@ -55,7 +55,7 @@ func TestListDestinations(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("ACCESS"), WithBaseURL(server.URL))
+	c := notification.NewClient(auth.StaticToken("ACCESS"), notification.WithBaseURL(server.URL))
 	dests, err := c.ListDestinations(context.Background())
 	if err != nil {
 		t.Fatalf("ListDestinations: %v", err)
@@ -68,7 +68,7 @@ func TestListDestinations(t *testing.T) {
 func TestCreateDestinationParsesLocation(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		var req CreateDestinationRequest
+		var req notification.CreateDestinationRequest
 		if err := json.Unmarshal(body, &req); err != nil {
 			t.Fatalf("decode req: %v", err)
 		}
@@ -80,10 +80,10 @@ func TestCreateDestinationParsesLocation(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("ACCESS"), WithBaseURL(server.URL))
-	id, err := c.CreateDestination(context.Background(), CreateDestinationRequest{
+	c := notification.NewClient(auth.StaticToken("ACCESS"), notification.WithBaseURL(server.URL))
+	id, err := c.CreateDestination(context.Background(), notification.CreateDestinationRequest{
 		Name: "primary", Status: "ENABLED",
-		DeliveryConfig: DeliveryConfig{Endpoint: "https://x.example.com/hook", VerificationToken: "V"},
+		DeliveryConfig: notification.DeliveryConfig{Endpoint: "https://x.example.com/hook", VerificationToken: "V"},
 	})
 	if err != nil {
 		t.Fatalf("CreateDestination: %v", err)
@@ -106,18 +106,16 @@ func TestUpdateConfig(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("ACCESS"), WithBaseURL(server.URL))
+	c := notification.NewClient(auth.StaticToken("ACCESS"), notification.WithBaseURL(server.URL))
 	if err := c.UpdateConfig(context.Background(), "ops@x.com"); err != nil {
 		t.Fatalf("UpdateConfig: %v", err)
 	}
 }
 
 func TestListAndCreateSubscription(t *testing.T) {
-	subs := []Subscription{{SubscriptionID: "S1", TopicID: "ORDER_CONFIRMATION", Status: "ENABLED"}}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/subscription" && r.Method == http.MethodGet {
-			body, _ := json.Marshal(subscriptionListResponse{Subscriptions: subs})
-			_, _ = w.Write(body)
+			_, _ = w.Write([]byte(`{"subscriptions":[{"subscriptionId":"S1","topicId":"ORDER_CONFIRMATION","status":"ENABLED"}]}`))
 			return
 		}
 		if r.URL.Path == "/subscription" && r.Method == http.MethodPost {
@@ -129,7 +127,7 @@ func TestListAndCreateSubscription(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("ACCESS"), WithBaseURL(server.URL))
+	c := notification.NewClient(auth.StaticToken("ACCESS"), notification.WithBaseURL(server.URL))
 
 	got, err := c.ListSubscriptions(context.Background())
 	if err != nil {
@@ -139,9 +137,9 @@ func TestListAndCreateSubscription(t *testing.T) {
 		t.Errorf("subs = %+v", got)
 	}
 
-	id, err := c.CreateSubscription(context.Background(), CreateSubscriptionRequest{
+	id, err := c.CreateSubscription(context.Background(), notification.CreateSubscriptionRequest{
 		TopicID: "ORDER_CONFIRMATION", Status: "ENABLED", DestinationID: "D",
-		Payload: Payload{Format: "JSON", SchemaVersion: "1.0", DeliveryProtocol: "HTTPS"},
+		Payload: notification.Payload{Format: "JSON", SchemaVersion: "1.0", DeliveryProtocol: "HTTPS"},
 	})
 	if err != nil {
 		t.Fatalf("CreateSubscription: %v", err)
@@ -167,7 +165,7 @@ func TestEnableDisableTestSubscription(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("A"), WithBaseURL(server.URL))
+	c := notification.NewClient(auth.StaticToken("A"), notification.WithBaseURL(server.URL))
 	if err := c.EnableSubscription(context.Background(), "S1"); err != nil {
 		t.Fatalf("Enable: %v", err)
 	}
@@ -190,15 +188,9 @@ func TestPropagatesNonOK(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("A"), WithBaseURL(server.URL))
+	c := notification.NewClient(auth.StaticToken("A"), notification.WithBaseURL(server.URL))
 	_, err := c.ListSubscriptions(context.Background())
 	if err == nil || !strings.Contains(err.Error(), "401") {
 		t.Errorf("expected 401, got %v", err)
 	}
-}
-
-// jsonF lets the test inline a single %q replacement without bringing in fmt.
-func jsonF(fmtStr, arg string) string {
-	q := strings.ReplaceAll(arg, `"`, `\"`)
-	return strings.Replace(fmtStr, "%q", `"`+q+`"`, 1)
 }

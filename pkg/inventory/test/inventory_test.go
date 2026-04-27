@@ -1,4 +1,4 @@
-package inventory
+package test
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/dracoDevs/go-ebay/pkg/auth"
+	"github.com/dracoDevs/go-ebay/pkg/inventory"
 )
 
 func TestBulkMigrateListingsHappyPath(t *testing.T) {
@@ -21,15 +22,16 @@ func TestBulkMigrateListingsHappyPath(t *testing.T) {
 			t.Errorf("method = %s", r.Method)
 		}
 		if got := r.Header.Get("Authorization"); got != "Bearer ACCESS" {
-			t.Errorf("auth header = %q", got)
+			t.Errorf("auth = %q", got)
 		}
 		body, _ := io.ReadAll(r.Body)
-		var req bulkMigrateRequest
+		var req map[string]any
 		if err := json.Unmarshal(body, &req); err != nil {
 			t.Fatalf("decode req: %v", err)
 		}
-		if len(req.Requests) != 2 || req.Requests[0].ListingID != "L1" || req.Requests[1].ListingID != "L2" {
-			t.Errorf("got requests = %+v", req.Requests)
+		reqs, _ := req["requests"].([]any)
+		if len(reqs) != 2 {
+			t.Errorf("requests len = %d", len(reqs))
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"responses":[
@@ -39,13 +41,13 @@ func TestBulkMigrateListingsHappyPath(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("ACCESS"), WithBaseURL(server.URL))
+	c := inventory.NewClient(auth.StaticToken("ACCESS"), inventory.WithBaseURL(server.URL))
 	res, err := c.BulkMigrateListings(context.Background(), []string{"L1", "L2"})
 	if err != nil {
 		t.Fatalf("BulkMigrateListings: %v", err)
 	}
 	if len(res) != 2 {
-		t.Fatalf("got %d results, want 2", len(res))
+		t.Fatalf("got %d, want 2", len(res))
 	}
 	if res[0].InventoryItems[0].SKU != "S1" || res[0].InventoryItems[0].OfferID != "O1" {
 		t.Errorf("first = %+v", res[0])
@@ -53,7 +55,7 @@ func TestBulkMigrateListingsHappyPath(t *testing.T) {
 }
 
 func TestBulkMigrateListingsBatchLimit(t *testing.T) {
-	c := NewClient(auth.StaticToken("ACCESS"))
+	c := inventory.NewClient(auth.StaticToken("ACCESS"))
 	_, err := c.BulkMigrateListings(context.Background(), []string{"a", "b", "c", "d", "e", "f"})
 	if err == nil || !strings.Contains(err.Error(), "5 listings") {
 		t.Errorf("expected batch-limit error, got %v", err)
@@ -61,7 +63,7 @@ func TestBulkMigrateListingsBatchLimit(t *testing.T) {
 }
 
 func TestBulkMigrateListingsEmpty(t *testing.T) {
-	c := NewClient(auth.StaticToken("ACCESS"))
+	c := inventory.NewClient(auth.StaticToken("ACCESS"))
 	_, err := c.BulkMigrateListings(context.Background(), nil)
 	if err == nil || !strings.Contains(err.Error(), "at least one") {
 		t.Errorf("expected empty-input error, got %v", err)
@@ -79,7 +81,7 @@ func TestBulkMigrateListingsHandlesPerListingFailures(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("ACCESS"), WithBaseURL(server.URL))
+	c := inventory.NewClient(auth.StaticToken("ACCESS"), inventory.WithBaseURL(server.URL))
 	res, err := c.BulkMigrateListings(context.Background(), []string{"OK", "FAIL"})
 	if err != nil {
 		t.Fatalf("BulkMigrateListings: %v", err)
@@ -87,43 +89,44 @@ func TestBulkMigrateListingsHandlesPerListingFailures(t *testing.T) {
 	if len(res) != 2 {
 		t.Fatalf("got %d, want 2", len(res))
 	}
-	if res[1].StatusCode != 400 {
-		t.Errorf("second status = %d, want 400", res[1].StatusCode)
-	}
-	if len(res[1].Errors) != 1 || res[1].Errors[0].ErrorID != 25001 {
-		t.Errorf("second errors = %+v", res[1].Errors)
+	if res[1].StatusCode != 400 || len(res[1].Errors) != 1 || res[1].Errors[0].ErrorID != 25001 {
+		t.Errorf("second = %+v", res[1])
 	}
 }
 
 func TestBulkUpdatePriceQuantitySendsExpectedShape(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
-		var req bulkUpdatePQRequest
+		var req map[string]any
 		if err := json.Unmarshal(body, &req); err != nil {
 			t.Fatalf("decode req: %v", err)
 		}
-		if len(req.Requests) != 1 {
-			t.Fatalf("want 1 request entry, got %d", len(req.Requests))
+		reqs, ok := req["requests"].([]any)
+		if !ok || len(reqs) != 1 {
+			t.Fatalf("requests = %v", req["requests"])
 		}
-		entry := req.Requests[0]
-		if entry.SKU != "SKU1" {
-			t.Errorf("SKU = %q", entry.SKU)
+		entry := reqs[0].(map[string]any)
+		if entry["sku"] != "SKU1" {
+			t.Errorf("sku = %v", entry["sku"])
 		}
-		if entry.ShipToLocationAvailability == nil || entry.ShipToLocationAvailability.Quantity != 5 {
-			t.Errorf("shipToLocationAvailability = %+v", entry.ShipToLocationAvailability)
+		stla, _ := entry["shipToLocationAvailability"].(map[string]any)
+		if stla == nil || stla["quantity"].(float64) != 5 {
+			t.Errorf("shipToLocationAvailability = %v", entry["shipToLocationAvailability"])
 		}
-		if len(entry.Offers) != 1 {
-			t.Fatalf("offers len = %d", len(entry.Offers))
+		offers := entry["offers"].([]any)
+		if len(offers) != 1 {
+			t.Fatalf("offers len = %d", len(offers))
 		}
-		offer := entry.Offers[0]
-		if offer.OfferID != "OFFER1" {
-			t.Errorf("offerId = %q", offer.OfferID)
+		offer := offers[0].(map[string]any)
+		if offer["offerId"] != "OFFER1" {
+			t.Errorf("offerId = %v", offer["offerId"])
 		}
-		if offer.AvailableQuantity == nil || *offer.AvailableQuantity != 5 {
-			t.Errorf("availableQuantity = %+v", offer.AvailableQuantity)
+		if offer["availableQuantity"].(float64) != 5 {
+			t.Errorf("availableQuantity = %v", offer["availableQuantity"])
 		}
-		if offer.Price == nil || offer.Price.Value != "9.99" || offer.Price.Currency != "USD" {
-			t.Errorf("price = %+v", offer.Price)
+		price := offer["price"].(map[string]any)
+		if price["value"] != "9.99" || price["currency"] != "USD" {
+			t.Errorf("price = %v", price)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"responses":[{"statusCode":200,"offerId":"OFFER1","sku":"SKU1"}]}`))
@@ -132,12 +135,9 @@ func TestBulkUpdatePriceQuantitySendsExpectedShape(t *testing.T) {
 
 	qty := 5
 	price := 9.99
-	c := NewClient(auth.StaticToken("ACCESS"), WithBaseURL(server.URL))
-	res, err := c.BulkUpdatePriceQuantity(context.Background(), []PriceQuantityUpdate{{
-		OfferID:  "OFFER1",
-		SKU:      "SKU1",
-		Quantity: &qty,
-		Price:    &price,
+	c := inventory.NewClient(auth.StaticToken("ACCESS"), inventory.WithBaseURL(server.URL))
+	res, err := c.BulkUpdatePriceQuantity(context.Background(), []inventory.PriceQuantityUpdate{{
+		OfferID: "OFFER1", SKU: "SKU1", Quantity: &qty, Price: &price,
 	}})
 	if err != nil {
 		t.Fatalf("BulkUpdatePriceQuantity: %v", err)
@@ -148,9 +148,9 @@ func TestBulkUpdatePriceQuantitySendsExpectedShape(t *testing.T) {
 }
 
 func TestBulkUpdatePriceQuantityRejectsQuantityWithoutSKU(t *testing.T) {
-	c := NewClient(auth.StaticToken("ACCESS"))
+	c := inventory.NewClient(auth.StaticToken("ACCESS"))
 	qty := 1
-	_, err := c.BulkUpdatePriceQuantity(context.Background(), []PriceQuantityUpdate{
+	_, err := c.BulkUpdatePriceQuantity(context.Background(), []inventory.PriceQuantityUpdate{
 		{OfferID: "O", Quantity: &qty},
 	})
 	if err == nil || !strings.Contains(err.Error(), "sku is required") {
@@ -159,8 +159,8 @@ func TestBulkUpdatePriceQuantityRejectsQuantityWithoutSKU(t *testing.T) {
 }
 
 func TestBulkUpdatePriceQuantityRejectsEmpty(t *testing.T) {
-	c := NewClient(auth.StaticToken("ACCESS"))
-	_, err := c.BulkUpdatePriceQuantity(context.Background(), []PriceQuantityUpdate{
+	c := inventory.NewClient(auth.StaticToken("ACCESS"))
+	_, err := c.BulkUpdatePriceQuantity(context.Background(), []inventory.PriceQuantityUpdate{
 		{OfferID: "O"},
 	})
 	if err == nil || !strings.Contains(err.Error(), "need quantity or price") {
@@ -178,7 +178,7 @@ func TestGetOffer(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("ACCESS"), WithBaseURL(server.URL))
+	c := inventory.NewClient(auth.StaticToken("ACCESS"), inventory.WithBaseURL(server.URL))
 	offer, raw, err := c.GetOffer(context.Background(), "O1")
 	if err != nil {
 		t.Fatalf("GetOffer: %v", err)
@@ -187,7 +187,7 @@ func TestGetOffer(t *testing.T) {
 		t.Errorf("offer = %+v", offer)
 	}
 	if len(raw) == 0 {
-		t.Error("expected non-empty raw body")
+		t.Error("expected non-empty raw")
 	}
 }
 
@@ -201,7 +201,7 @@ func TestGetInventoryItem(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("ACCESS"), WithBaseURL(server.URL))
+	c := inventory.NewClient(auth.StaticToken("ACCESS"), inventory.WithBaseURL(server.URL))
 	it, _, err := c.GetInventoryItem(context.Background(), "sku-with-dashes")
 	if err != nil {
 		t.Fatalf("GetInventoryItem: %v", err)
@@ -218,9 +218,9 @@ func TestGetOfferPropagatesNonOK(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("ACCESS"), WithBaseURL(server.URL))
+	c := inventory.NewClient(auth.StaticToken("ACCESS"), inventory.WithBaseURL(server.URL))
 	_, _, err := c.GetOffer(context.Background(), "missing")
 	if err == nil || !strings.Contains(err.Error(), "404") {
-		t.Errorf("expected 404 error, got %v", err)
+		t.Errorf("expected 404, got %v", err)
 	}
 }

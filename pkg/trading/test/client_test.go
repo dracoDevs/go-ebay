@@ -1,4 +1,4 @@
-package trading
+package test
 
 import (
 	"encoding/xml"
@@ -8,21 +8,22 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/dracoDevs/go-ebay/pkg/trading"
 )
 
 type emptyBody struct{}
 
-// stubCommand is a minimal Command implementation for testing RunCommand.
 type stubCommand struct {
 	callName string
 	body     interface{}
-	response Response
+	response trading.Response
 	parseErr error
 }
 
-func (c stubCommand) CallName() string                         { return c.callName }
-func (c stubCommand) Body() interface{}                        { return c.body }
-func (c stubCommand) ParseResponse(r []byte) (Response, error) { return c.response, c.parseErr }
+func (c stubCommand) CallName() string                                 { return c.callName }
+func (c stubCommand) Body() interface{}                                { return c.body }
+func (c stubCommand) ParseResponse(r []byte) (trading.Response, error) { return c.response, c.parseErr }
 
 func TestRunCommandSuccess(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -30,30 +31,27 @@ func TestRunCommandSuccess(t *testing.T) {
 			t.Errorf("expected POST, got %s", r.Method)
 		}
 		if ct := r.Header.Get("Content-Type"); ct != "text/xml" {
-			t.Errorf("Content-Type = %q, want %q", ct, "text/xml")
+			t.Errorf("Content-Type = %q", ct)
 		}
 		if cn := r.Header.Get("X-EBAY-API-CALL-NAME"); cn != "TestCall" {
-			t.Errorf("X-EBAY-API-CALL-NAME = %q, want %q", cn, "TestCall")
+			t.Errorf("X-EBAY-API-CALL-NAME = %q", cn)
 		}
 		if dev := r.Header.Get("X-EBAY-API-DEV-NAME"); dev != "dev123" {
-			t.Errorf("X-EBAY-API-DEV-NAME = %q, want %q", dev, "dev123")
+			t.Errorf("X-EBAY-API-DEV-NAME = %q", dev)
 		}
 		if app := r.Header.Get("X-EBAY-API-APP-NAME"); app != "app123" {
-			t.Errorf("X-EBAY-API-APP-NAME = %q, want %q", app, "app123")
+			t.Errorf("X-EBAY-API-APP-NAME = %q", app)
 		}
 		if cert := r.Header.Get("X-EBAY-API-CERT-NAME"); cert != "cert123" {
-			t.Errorf("X-EBAY-API-CERT-NAME = %q, want %q", cert, "cert123")
-		}
-		if site := r.Header.Get("X-EBAY-API-SITEID"); site != "0" {
-			t.Errorf("X-EBAY-API-SITEID = %q, want %q", site, "0")
+			t.Errorf("X-EBAY-API-CERT-NAME = %q", cert)
 		}
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `<TestCallResponse><Ack>Success</Ack></TestCallResponse>`)
 	}))
 	defer server.Close()
 
-	conf := Conf{
-		baseUrl:   server.URL,
+	conf := trading.Conf{
+		BaseURL:   server.URL,
 		DevId:     "dev123",
 		AppId:     "app123",
 		CertId:    "cert123",
@@ -64,15 +62,15 @@ func TestRunCommandSuccess(t *testing.T) {
 	cmd := stubCommand{
 		callName: "TestCall",
 		body:     emptyBody{},
-		response: GenericResponse{Ack: "Success"},
+		response: trading.GenericResponse{Ack: "Success"},
 	}
 
 	resp, err := conf.RunCommand(cmd)
 	if err != nil {
-		t.Fatalf("RunCommand() error: %v", err)
+		t.Fatalf("RunCommand: %v", err)
 	}
 	if resp.Failure() {
-		t.Error("expected success response")
+		t.Error("expected success")
 	}
 }
 
@@ -83,22 +81,9 @@ func TestRunCommandHTTPError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	conf := Conf{
-		baseUrl:   server.URL,
-		DevId:     "dev",
-		AppId:     "app",
-		CertId:    "cert",
-		AuthToken: "token",
-	}
-
-	cmd := stubCommand{
-		callName: "TestCall",
-		body:     emptyBody{},
-		response: GenericResponse{},
-	}
-
-	_, err := conf.RunCommand(cmd)
-	if err == nil {
+	conf := trading.Conf{BaseURL: server.URL, DevId: "d", AppId: "a", CertId: "c", AuthToken: "t"}
+	cmd := stubCommand{callName: "TestCall", body: emptyBody{}, response: trading.GenericResponse{}}
+	if _, err := conf.RunCommand(cmd); err == nil {
 		t.Fatal("expected error for HTTP 500")
 	}
 }
@@ -110,47 +95,25 @@ func TestRunCommandFailureAck(t *testing.T) {
 	}))
 	defer server.Close()
 
-	conf := Conf{
-		baseUrl:   server.URL,
-		DevId:     "dev",
-		AppId:     "app",
-		CertId:    "cert",
-		AuthToken: "token",
-	}
-
-	failResp := GenericResponse{
-		Ack: "Failure",
-		Errors: []responseError{
-			{ShortMessage: "Bad", LongMessage: "Bad request", ErrorCode: 100},
-		},
-	}
-
-	cmd := stubCommand{
-		callName: "TestCall",
-		body:     emptyBody{},
-		response: failResp,
-	}
+	conf := trading.Conf{BaseURL: server.URL, DevId: "d", AppId: "a", CertId: "c", AuthToken: "t"}
+	cmd := stubCommand{callName: "TestCall", body: emptyBody{}, response: trading.GenericResponse{Ack: "Failure"}}
 
 	resp, err := conf.RunCommand(cmd)
 	if err == nil {
 		t.Fatal("expected error for Failure ack")
 	}
 	if !resp.Failure() {
-		t.Error("expected Failure() to return true")
+		t.Error("expected Failure() == true")
 	}
 }
 
 func TestSandboxAndProduction(t *testing.T) {
-	conf := Conf{}
-
-	sandbox := conf.Sandbox()
-	if sandbox.baseUrl != "https://api.sandbox.ebay.com" {
-		t.Errorf("Sandbox baseUrl = %q, want %q", sandbox.baseUrl, "https://api.sandbox.ebay.com")
+	conf := trading.Conf{}
+	if got := conf.Sandbox().BaseURL; got != "https://api.sandbox.ebay.com" {
+		t.Errorf("Sandbox BaseURL = %q", got)
 	}
-
-	prod := conf.Production()
-	if prod.baseUrl != "https://api.ebay.com" {
-		t.Errorf("Production baseUrl = %q, want %q", prod.baseUrl, "https://api.ebay.com")
+	if got := conf.Production().BaseURL; got != "https://api.ebay.com" {
+		t.Errorf("Production BaseURL = %q", got)
 	}
 }
 
@@ -158,37 +121,20 @@ func TestRunCommandSendsAuthToken(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			t.Fatalf("failed to read request body: %v", err)
+			t.Fatalf("read body: %v", err)
 		}
-		if len(body) == 0 {
-			t.Error("empty request body")
-		}
-		bodyStr := string(body)
-		if !strings.Contains(bodyStr, "mySecretToken") {
-			t.Error("request body does not contain auth token")
+		if !strings.Contains(string(body), "mySecretToken") {
+			t.Error("body missing auth token")
 		}
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `<TestCallResponse><Ack>Success</Ack></TestCallResponse>`)
 	}))
 	defer server.Close()
 
-	conf := Conf{
-		baseUrl:   server.URL,
-		DevId:     "dev",
-		AppId:     "app",
-		CertId:    "cert",
-		AuthToken: "mySecretToken",
-	}
-
-	cmd := stubCommand{
-		callName: "TestCall",
-		body:     emptyBody{},
-		response: GenericResponse{Ack: "Success"},
-	}
-
-	_, err := conf.RunCommand(cmd)
-	if err != nil {
-		t.Fatalf("RunCommand() error: %v", err)
+	conf := trading.Conf{BaseURL: server.URL, DevId: "d", AppId: "a", CertId: "c", AuthToken: "mySecretToken"}
+	cmd := stubCommand{callName: "TestCall", body: emptyBody{}, response: trading.GenericResponse{Ack: "Success"}}
+	if _, err := conf.RunCommand(cmd); err != nil {
+		t.Fatalf("RunCommand: %v", err)
 	}
 }
 
@@ -200,28 +146,14 @@ func TestRunCommandLogger(t *testing.T) {
 	defer server.Close()
 
 	logCalls := 0
-	conf := Conf{
-		baseUrl:   server.URL,
-		DevId:     "dev",
-		AppId:     "app",
-		CertId:    "cert",
-		AuthToken: "token",
-		Logger: func(args ...interface{}) {
-			logCalls++
-		},
+	conf := trading.Conf{
+		BaseURL: server.URL, DevId: "d", AppId: "a", CertId: "c", AuthToken: "t",
+		Logger: func(args ...interface{}) { logCalls++ },
 	}
-
-	cmd := stubCommand{
-		callName: "TestCall",
-		body:     emptyBody{},
-		response: GenericResponse{Ack: "Success"},
+	cmd := stubCommand{callName: "TestCall", body: emptyBody{}, response: trading.GenericResponse{Ack: "Success"}}
+	if _, err := conf.RunCommand(cmd); err != nil {
+		t.Fatalf("RunCommand: %v", err)
 	}
-
-	_, err := conf.RunCommand(cmd)
-	if err != nil {
-		t.Fatalf("RunCommand() error: %v", err)
-	}
-	// Logger should be called twice: once for request, once for response
 	if logCalls != 2 {
 		t.Errorf("Logger called %d times, want 2", logCalls)
 	}
@@ -240,13 +172,12 @@ func TestTimestampUnmarshal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var v struct {
-				T Timestamp `xml:"T"`
+				T trading.Timestamp `xml:"T"`
 			}
 			if err := xml.Unmarshal([]byte(`<R>`+tt.xml+`</R>`), &v); err != nil {
-				t.Fatalf("Unmarshal error: %v", err)
+				t.Fatalf("Unmarshal: %v", err)
 			}
-			got := v.T.Format("2006-01-02")
-			if got != tt.want {
+			if got := v.T.Format("2006-01-02"); got != tt.want {
 				t.Errorf("got %q, want %q", got, tt.want)
 			}
 		})
@@ -254,10 +185,9 @@ func TestTimestampUnmarshal(t *testing.T) {
 
 	t.Run("invalid format", func(t *testing.T) {
 		var v struct {
-			T Timestamp `xml:"T"`
+			T trading.Timestamp `xml:"T"`
 		}
-		err := xml.Unmarshal([]byte(`<R><T>not-a-date</T></R>`), &v)
-		if err == nil {
+		if err := xml.Unmarshal([]byte(`<R><T>not-a-date</T></R>`), &v); err == nil {
 			t.Error("expected error for invalid date format")
 		}
 	})

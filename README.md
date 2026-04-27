@@ -193,16 +193,17 @@ toggles instead, since its base URL is more stable across the API surface.
 
 ## Tests
 
-Each package's tests live alongside it (Go convention):
+Each package has a `test/` subdirectory with its tests as a separate
+`package test`, exercising only the public API:
 
 ```
-pkg/auth/auth_test.go
-pkg/inventory/inventory_test.go
-pkg/fulfillment/fulfillment_test.go
-pkg/notification/notification_test.go
-pkg/trading/client_test.go
-pkg/trading/commands_test.go
-pkg/trading/revise_fixed_price_item_test.go
+pkg/auth/test/auth_test.go
+pkg/inventory/test/inventory_test.go
+pkg/fulfillment/test/fulfillment_test.go
+pkg/notification/test/notification_test.go
+pkg/trading/test/client_test.go
+pkg/trading/test/commands_test.go
+pkg/trading/test/revise_fixed_price_item_test.go
 ```
 
 The REST packages use `httptest.NewServer` and `WithBaseURL` to verify

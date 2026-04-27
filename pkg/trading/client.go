@@ -19,7 +19,7 @@ type Command interface {
 }
 
 type Conf struct {
-	baseUrl string
+	BaseURL string
 
 	DevId, AppId, CertId string
 	RuName, AuthToken    string
@@ -28,12 +28,12 @@ type Conf struct {
 }
 
 func (e Conf) Sandbox() Conf {
-	e.baseUrl = "https://api.sandbox.ebay.com"
+	e.BaseURL = "https://api.sandbox.ebay.com"
 	return e
 }
 
 func (e Conf) Production() Conf {
-	e.baseUrl = "https://api.ebay.com"
+	e.BaseURL = "https://api.ebay.com"
 	return e
 }
 
@@ -56,7 +56,7 @@ func (e Conf) RunCommand(c Command) (Response, error) {
 		e.Logger(body.String())
 	}
 
-	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/ws/api.dll", e.baseUrl), body)
+	req, _ := http.NewRequest("POST", fmt.Sprintf("%s/ws/api.dll", e.BaseURL), body)
 	req.Header.Add("X-EBAY-API-DEV-NAME", e.DevId)
 	req.Header.Add("X-EBAY-API-APP-NAME", e.AppId)
 	req.Header.Add("X-EBAY-API-CERT-NAME", e.CertId)

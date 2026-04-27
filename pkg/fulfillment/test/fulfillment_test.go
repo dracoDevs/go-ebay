@@ -1,4 +1,4 @@
-package fulfillment
+package test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/dracoDevs/go-ebay/pkg/auth"
+	"github.com/dracoDevs/go-ebay/pkg/fulfillment"
 )
 
 const sampleOrderJSON = `{
@@ -48,16 +49,13 @@ func TestGetOrderHappyPath(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("ACCESS"), WithBaseURL(server.URL))
+	c := fulfillment.NewClient(auth.StaticToken("ACCESS"), fulfillment.WithBaseURL(server.URL))
 	order, err := c.GetOrder(context.Background(), "12-34567-89012")
 	if err != nil {
 		t.Fatalf("GetOrder: %v", err)
 	}
-	if order.OrderID != "12-34567-89012" {
-		t.Errorf("orderId = %q", order.OrderID)
-	}
-	if order.Buyer.Username != "buyer-1" {
-		t.Errorf("buyer = %+v", order.Buyer)
+	if order.OrderID != "12-34567-89012" || order.Buyer.Username != "buyer-1" {
+		t.Errorf("order = %+v", order)
 	}
 	if len(order.LineItems) != 1 || order.LineItems[0].Title != "Item" {
 		t.Errorf("lineItems = %+v", order.LineItems)
@@ -66,7 +64,7 @@ func TestGetOrderHappyPath(t *testing.T) {
 		t.Errorf("totalDueSeller = %v, want 8.5", got)
 	}
 	if len(order.Raw) == 0 {
-		t.Error("expected Raw to be populated")
+		t.Error("expected Raw populated")
 	}
 }
 
@@ -80,14 +78,14 @@ func TestGetOrderMarketplaceOverride(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("A"), WithBaseURL(server.URL), WithMarketplace("EBAY_GB"))
+	c := fulfillment.NewClient(auth.StaticToken("A"), fulfillment.WithBaseURL(server.URL), fulfillment.WithMarketplace("EBAY_GB"))
 	if _, err := c.GetOrder(context.Background(), "o"); err != nil {
 		t.Fatalf("GetOrder: %v", err)
 	}
 }
 
 func TestGetOrderEmptyIDErrors(t *testing.T) {
-	c := NewClient(auth.StaticToken("A"))
+	c := fulfillment.NewClient(auth.StaticToken("A"))
 	if _, err := c.GetOrder(context.Background(), ""); err == nil {
 		t.Error("expected error for empty orderID")
 	}
@@ -100,7 +98,7 @@ func TestGetOrderPropagatesNonOK(t *testing.T) {
 	}))
 	defer server.Close()
 
-	c := NewClient(auth.StaticToken("A"), WithBaseURL(server.URL))
+	c := fulfillment.NewClient(auth.StaticToken("A"), fulfillment.WithBaseURL(server.URL))
 	_, err := c.GetOrder(context.Background(), "x")
 	if err == nil || !strings.Contains(err.Error(), "401") {
 		t.Errorf("expected 401, got %v", err)
@@ -109,13 +107,13 @@ func TestGetOrderPropagatesNonOK(t *testing.T) {
 
 func TestMoneyFloatValue(t *testing.T) {
 	cases := []struct {
-		in   Money
+		in   fulfillment.Money
 		want float64
 	}{
-		{Money{Value: "12.34", Currency: "USD"}, 12.34},
-		{Money{Value: "0", Currency: "USD"}, 0},
-		{Money{Value: "", Currency: "USD"}, 0},
-		{Money{Value: "not-a-number", Currency: "USD"}, 0},
+		{fulfillment.Money{Value: "12.34", Currency: "USD"}, 12.34},
+		{fulfillment.Money{Value: "0", Currency: "USD"}, 0},
+		{fulfillment.Money{Value: "", Currency: "USD"}, 0},
+		{fulfillment.Money{Value: "not-a-number", Currency: "USD"}, 0},
 	}
 	for _, tc := range cases {
 		if got := tc.in.FloatValue(); got != tc.want {

@@ -1,12 +1,3 @@
-// Package inventory wraps the eBay Sell Inventory API v1.
-//
-// Coverage is limited to the endpoints we actually use today:
-//   - bulk_migrate_listing       (move Trading-born listings into Inventory)
-//   - bulk_update_price_quantity (revise an offer's price + quantity in place)
-//   - GET /offer/{offerId}        (sanity-check an offer's state)
-//   - GET /inventory_item/{sku}   (sanity-check the underlying inventory item)
-//
-// Add more methods as they're needed; keep the surface small.
 package inventory
 
 import (
@@ -24,30 +15,22 @@ import (
 
 const baseURL = "https://api.ebay.com/sell/inventory/v1"
 
-// Client calls the Sell Inventory API. Construct via NewClient.
 type Client struct {
 	tokenSource auth.TokenSource
 	httpClient  *http.Client
 	baseURL     string
 }
 
-// Option customizes a Client at construction.
 type Option func(*Client)
 
-// WithHTTPClient injects a custom *http.Client. The default is an http.Client
-// with a 30s timeout. Use this to share a transport with other parts of your
-// app (custom dialer, proxy, etc.).
 func WithHTTPClient(c *http.Client) Option {
 	return func(cl *Client) { cl.httpClient = c }
 }
 
-// WithBaseURL overrides the API base. Default is the production endpoint.
-// Use this for sandbox or local httptest servers.
 func WithBaseURL(u string) Option {
 	return func(cl *Client) { cl.baseURL = u }
 }
 
-// NewClient returns an Inventory API client backed by the given TokenSource.
 func NewClient(src auth.TokenSource, opts ...Option) *Client {
 	c := &Client{
 		tokenSource: src,
@@ -60,27 +43,20 @@ func NewClient(src auth.TokenSource, opts ...Option) *Client {
 	return c
 }
 
-// ---------- bulkMigrateListing ----------
-
-// MigrateListingResult is one entry in the bulkMigrateListing response.
 type MigrateListingResult struct {
-	ListingID      string         `json:"listingId"`
-	MarketplaceID  string         `json:"marketplaceId"`
-	StatusCode     int            `json:"statusCode"`
-	InventoryItems []ItemListing  `json:"inventoryItems"`
-	Errors         []ErrorDetail  `json:"errors"`
-	Warnings       []ErrorDetail  `json:"warnings"`
+	ListingID      string        `json:"listingId"`
+	MarketplaceID  string        `json:"marketplaceId"`
+	StatusCode     int           `json:"statusCode"`
+	InventoryItems []ItemListing `json:"inventoryItems"`
+	Errors         []ErrorDetail `json:"errors"`
+	Warnings       []ErrorDetail `json:"warnings"`
 }
 
-// ItemListing is the (sku, offerId) pair the migrate API mints for each
-// successfully-migrated Trading listing.
 type ItemListing struct {
 	SKU     string `json:"sku"`
 	OfferID string `json:"offerId"`
 }
 
-// ErrorDetail is the per-listing/per-offer error envelope returned by the
-// Inventory API for both migrate and price/quantity updates.
 type ErrorDetail struct {
 	ErrorID     int    `json:"errorId"`
 	Domain      string `json:"domain"`
@@ -101,15 +77,9 @@ type bulkMigrateResponse struct {
 	Responses []MigrateListingResult `json:"responses"`
 }
 
-// BulkMigrateListings converts up to 5 Trading-API-born listings into
-// Inventory API objects (inventory item + offer). The Trading listing stays
-// active; this only creates the management wrappers so the same listing can
-// then be updated via BulkUpdatePriceQuantity.
-//
-// eBay returns 400 when every listing in the batch fails and 207 when some
-// succeed and some fail. Both carry per-listing breakdowns. This method
-// surfaces those breakdowns as the returned slice and only errors when the
-// transport itself fails or the response can't be parsed.
+// eBay returns 207 (Multi-Status) on partial success and 400 when every
+// listing failed; both carry per-listing breakdowns. Surface those as the
+// result slice and only error on transport failures or unparseable bodies.
 func (c *Client) BulkMigrateListings(ctx context.Context, listingIDs []string) ([]MigrateListingResult, error) {
 	if len(listingIDs) == 0 {
 		return nil, fmt.Errorf("inventory: at least one listingId required")
@@ -139,26 +109,18 @@ func (c *Client) BulkMigrateListings(ctx context.Context, listingIDs []string) (
 	return out.Responses, nil
 }
 
-// ---------- bulkUpdatePriceQuantity ----------
-
-// PriceQuantityUpdate is one revise-in-place operation against an existing
-// Inventory API offer. Leave Price nil to skip price; leave Quantity nil to
-// skip quantity. At least one must be set.
-//
-// When Quantity is set, SKU must also be set so the inventory item's
-// shipToLocationAvailability.quantity is bumped in the same call. Without
-// this, eBay's live-listing quantity stays capped by min(offer.qty, sku.qty)
-// and the revise becomes a no-op whenever the new quantity exceeds the
-// current ship-to-home total.
+// PriceQuantityUpdate requires SKU when Quantity is set so the inventory
+// item's shipToLocationAvailability is bumped alongside the offer; without
+// that, eBay caps live qty at min(offer.qty, sku.qty) and the revise can
+// silently no-op.
 type PriceQuantityUpdate struct {
 	OfferID     string
 	SKU         string
 	Quantity    *int
 	Price       *float64
-	CurrencyISO string // defaults to "USD" when Price is set
+	CurrencyISO string
 }
 
-// PriceQuantityResult is one entry in the bulk_update_price_quantity response.
 type PriceQuantityResult struct {
 	StatusCode int           `json:"statusCode"`
 	OfferID    string        `json:"offerId"`
@@ -196,9 +158,6 @@ type bulkUpdatePQResponse struct {
 	Responses []PriceQuantityResult `json:"responses"`
 }
 
-// BulkUpdatePriceQuantity applies in-place price and/or quantity revisions to
-// existing Inventory API offers. Returns per-offer status so callers can
-// handle partial failures.
 func (c *Client) BulkUpdatePriceQuantity(ctx context.Context, updates []PriceQuantityUpdate) ([]PriceQuantityResult, error) {
 	if len(updates) == 0 {
 		return nil, fmt.Errorf("inventory: at least one update required")
@@ -256,35 +215,27 @@ func (c *Client) BulkUpdatePriceQuantity(ctx context.Context, updates []PriceQua
 	return out.Responses, nil
 }
 
-// ---------- GetOffer ----------
-
-// Offer is the (intentionally partial) GET /offer/{offerId} response. eBay's
-// full offer schema is huge; this carries the fields callers in this codebase
-// actually inspect.
 type Offer struct {
-	OfferID         string                 `json:"offerId"`
-	SKU             string                 `json:"sku"`
-	MarketplaceID   string                 `json:"marketplaceId"`
-	Format          string                 `json:"format"`
-	AvailableQty    int                    `json:"availableQuantity"`
-	Status          string                 `json:"status"`
-	ListingID       string                 `json:"listingId"`
-	Pricing         *OfferPricingSummary   `json:"pricingSummary,omitempty"`
-	Raw             json.RawMessage        `json:"-"`
+	OfferID       string               `json:"offerId"`
+	SKU           string               `json:"sku"`
+	MarketplaceID string               `json:"marketplaceId"`
+	Format        string               `json:"format"`
+	AvailableQty  int                  `json:"availableQuantity"`
+	Status        string               `json:"status"`
+	ListingID     string               `json:"listingId"`
+	Pricing       *OfferPricingSummary `json:"pricingSummary,omitempty"`
+	Raw           json.RawMessage      `json:"-"`
 }
 
-// OfferPricingSummary is the price block on an Offer.
 type OfferPricingSummary struct {
 	Price *MoneyAmount `json:"price,omitempty"`
 }
 
-// MoneyAmount is the {value,currency} envelope eBay returns everywhere.
 type MoneyAmount struct {
 	Value    string `json:"value"`
 	Currency string `json:"currency"`
 }
 
-// GetOffer fetches one offer by id.
 func (c *Client) GetOffer(ctx context.Context, offerID string) (*Offer, []byte, error) {
 	if offerID == "" {
 		return nil, nil, fmt.Errorf("inventory: offerID is required")
@@ -304,15 +255,12 @@ func (c *Client) GetOffer(ctx context.Context, offerID string) (*Offer, []byte, 
 	return &out, raw, nil
 }
 
-// ---------- GetInventoryItem ----------
-
-// InventoryItem is the (intentionally partial) GET /inventory_item/{sku} response.
 type InventoryItem struct {
-	SKU                string                          `json:"sku"`
-	Availability       *InventoryItemAvailability      `json:"availability,omitempty"`
-	Condition          string                          `json:"condition,omitempty"`
-	Product            *InventoryItemProduct           `json:"product,omitempty"`
-	Raw                json.RawMessage                 `json:"-"`
+	SKU          string                     `json:"sku"`
+	Availability *InventoryItemAvailability `json:"availability,omitempty"`
+	Condition    string                     `json:"condition,omitempty"`
+	Product      *InventoryItemProduct      `json:"product,omitempty"`
+	Raw          json.RawMessage            `json:"-"`
 }
 
 type InventoryItemAvailability struct {
@@ -327,7 +275,6 @@ type InventoryItemProduct struct {
 	UPC         []string `json:"upc,omitempty"`
 }
 
-// GetInventoryItem fetches one inventory item by SKU.
 func (c *Client) GetInventoryItem(ctx context.Context, sku string) (*InventoryItem, []byte, error) {
 	if sku == "" {
 		return nil, nil, fmt.Errorf("inventory: sku is required")
@@ -347,11 +294,6 @@ func (c *Client) GetInventoryItem(ctx context.Context, sku string) (*InventoryIt
 	return &out, raw, nil
 }
 
-// ---------- shared transport ----------
-
-// do is the single HTTP entrypoint for the package. It mints a token, sends
-// the request, and returns the response + raw body for caller-side decoding.
-// The response body is fully read and closed before returning.
 func (c *Client) do(ctx context.Context, method, path string, body io.Reader, contentType string) (*http.Response, []byte, error) {
 	tok, err := c.tokenSource.Token(ctx)
 	if err != nil {
