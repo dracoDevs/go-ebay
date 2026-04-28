@@ -1,15 +1,16 @@
 # go-ebay
 
-Go client library for eBay's seller-side APIs. Covers the four surfaces we
-hit in production:
+Go client library for eBay's seller-side APIs. Covers seven surfaces:
 
 | Package | API | Wire format | Auth |
 |---|---|---|---|
 | [`pkg/trading`](pkg/trading) | Trading API | XML over `/ws/api.dll` | `eBayAuthToken` (long-lived) |
 | [`pkg/inventory`](pkg/inventory) | Sell Inventory v1 | JSON | OAuth user token |
-| [`pkg/fulfillment`](pkg/fulfillment) | Sell Fulfillment v1 | JSON | OAuth user token |
+| [`pkg/account`](pkg/account) | Sell Account v1 (business policies) | JSON | OAuth user token |
+| [`pkg/fulfillment`](pkg/fulfillment) | Sell Fulfillment v1 (orders, shipping) | JSON | OAuth user token |
 | [`pkg/notification`](pkg/notification) | Commerce Notification v1 | JSON | OAuth (app for topics/destinations, user for subscriptions) |
-| [`pkg/auth`](pkg/auth) | OAuth identity | form-encoded | n/a (mints tokens) |
+| [`pkg/identity`](pkg/identity) | Commerce Identity v1 | JSON | OAuth user token |
+| [`pkg/auth`](pkg/auth) | OAuth identity (token sources) | form-encoded | n/a (mints tokens) |
 
 ## Install
 
