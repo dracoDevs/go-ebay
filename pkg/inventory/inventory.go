@@ -269,6 +269,8 @@ type InventoryItemProduct struct {
 	Brand       string   `json:"brand,omitempty"`
 	MPN         string   `json:"mpn,omitempty"`
 	UPC         []string `json:"upc,omitempty"`
+	ImageURLs   []string `json:"imageUrls,omitempty"`
+	EPID        string   `json:"epid,omitempty"`
 }
 
 func (c *Client) GetInventoryItem(ctx context.Context, sku string) (*InventoryItem, error) {
