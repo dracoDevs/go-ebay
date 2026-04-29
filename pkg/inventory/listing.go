@@ -234,41 +234,6 @@ type offersList struct {
 	Next   string  `json:"next"`
 }
 
-// ListOffers paginates GET /sell/inventory/v1/offer filtered by
-// marketplace + format, returning every offer the seller manages in
-// that marketplace. Each Offer carries listingId + sku + offerId, so a
-// single call recovers the full mapping for any reconciliation flow.
-//
-// eBay does not expose a /listing collection endpoint; this is the
-// canonical way to enumerate inventory-managed listings.
-func (c *Client) ListOffers(ctx context.Context, marketplaceID, format string) ([]Offer, error) {
-	if marketplaceID == "" {
-		return nil, fmt.Errorf("inventory: marketplaceID is required")
-	}
-	if format == "" {
-		format = "FIXED_PRICE"
-	}
-	all := make([]Offer, 0)
-	u := c.doer.BaseURL + "/offer?marketplace_id=" + url.QueryEscape(marketplaceID) + "&format=" + url.QueryEscape(format) + "&limit=200"
-	for {
-		res, err := c.doer.DoURL(ctx, http.MethodGet, u, nil, "")
-		if err != nil {
-			return nil, err
-		}
-		if res.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("inventory: listOffers %d: %s", res.StatusCode, string(res.Body))
-		}
-		var page offersList
-		if err := json.Unmarshal(res.Body, &page); err != nil {
-			return nil, fmt.Errorf("inventory: decode listOffers: %w", err)
-		}
-		all = append(all, page.Offers...)
-		if page.Next == "" {
-			return all, nil
-		}
-		u = page.Next
-	}
-}
 
 func (c *Client) GetOffersBySKU(ctx context.Context, sku string) ([]Offer, error) {
 	if sku == "" {

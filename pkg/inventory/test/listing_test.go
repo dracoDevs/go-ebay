@@ -127,45 +127,6 @@ func TestWithdrawAndDeleteOffer(t *testing.T) {
 	}
 }
 
-func TestListOffersFollowsPagination(t *testing.T) {
-	calls := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		calls++
-		if r.URL.Path != "/offer" {
-			t.Errorf("path = %q", r.URL.Path)
-		}
-		if got := r.URL.Query().Get("marketplace_id"); got != "EBAY_US" {
-			t.Errorf("marketplace_id = %q", got)
-		}
-		if got := r.URL.Query().Get("format"); got != "FIXED_PRICE" {
-			t.Errorf("format = %q", got)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		switch calls {
-		case 1:
-			next := "http://" + r.Host + "/offer?marketplace_id=EBAY_US&format=FIXED_PRICE&offset=200&limit=200"
-			_, _ = w.Write([]byte(`{"offers":[{"offerId":"O1","sku":"S1","listingId":"L1","marketplaceId":"EBAY_US","format":"FIXED_PRICE"}],"next":"` + next + `"}`))
-		case 2:
-			if r.URL.Query().Get("offset") != "200" {
-				t.Errorf("second offset = %q", r.URL.Query().Get("offset"))
-			}
-			_, _ = w.Write([]byte(`{"offers":[{"offerId":"O2","sku":"S2","listingId":"L2","marketplaceId":"EBAY_US","format":"FIXED_PRICE"}]}`))
-		default:
-			t.Fatalf("unexpected call %d", calls)
-		}
-	}))
-	defer server.Close()
-
-	c := inventory.NewClient(auth.StaticToken("A"), inventory.WithBaseURL(server.URL))
-	out, err := c.ListOffers(context.Background(), "EBAY_US", "FIXED_PRICE")
-	if err != nil {
-		t.Fatalf("ListOffers: %v", err)
-	}
-	if len(out) != 2 || out[0].ListingID != "L1" || out[1].SKU != "S2" || out[0].OfferID != "O1" {
-		t.Errorf("offers = %+v", out)
-	}
-}
-
 func TestGetOffersBySKU(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if got := r.URL.Query().Get("sku"); got != "sku-1" {
