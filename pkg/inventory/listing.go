@@ -234,6 +234,48 @@ type offersList struct {
 	Next   string  `json:"next"`
 }
 
+type ListingRef struct {
+	ListingID     string `json:"listingId"`
+	SKU           string `json:"sku"`
+	MarketplaceID string `json:"marketplaceId"`
+	Format        string `json:"format"`
+}
+
+type listingsPage struct {
+	Listings []ListingRef `json:"listings"`
+	Total    int          `json:"total"`
+	Next     string       `json:"next"`
+	Limit    int          `json:"limit"`
+	Offset   int          `json:"offset"`
+}
+
+// GetListings paginates GET /sell/inventory/v1/listing, returning every
+// listing on the seller's account that is currently managed by the
+// Inventory API (either migrated from Trading or created directly via
+// Inventory). Use the SKU to recover the offerId via GetOffersBySKU.
+func (c *Client) GetListings(ctx context.Context) ([]ListingRef, error) {
+	all := make([]ListingRef, 0)
+	u := c.doer.BaseURL + "/listing?limit=200"
+	for {
+		res, err := c.doer.DoURL(ctx, http.MethodGet, u, nil, "")
+		if err != nil {
+			return nil, err
+		}
+		if res.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("inventory: getListings %d: %s", res.StatusCode, string(res.Body))
+		}
+		var page listingsPage
+		if err := json.Unmarshal(res.Body, &page); err != nil {
+			return nil, fmt.Errorf("inventory: decode getListings: %w", err)
+		}
+		all = append(all, page.Listings...)
+		if page.Next == "" {
+			return all, nil
+		}
+		u = page.Next
+	}
+}
+
 func (c *Client) GetOffersBySKU(ctx context.Context, sku string) ([]Offer, error) {
 	if sku == "" {
 		return nil, fmt.Errorf("inventory: sku is required")

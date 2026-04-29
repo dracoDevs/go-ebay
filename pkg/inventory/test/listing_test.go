@@ -127,6 +127,39 @@ func TestWithdrawAndDeleteOffer(t *testing.T) {
 	}
 }
 
+func TestGetListingsFollowsPagination(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if r.URL.Path != "/listing" {
+			t.Errorf("path = %q", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		switch calls {
+		case 1:
+			next := "http://" + r.Host + "/listing?offset=200&limit=200"
+			_, _ = w.Write([]byte(`{"listings":[{"listingId":"L1","sku":"S1","marketplaceId":"EBAY_US","format":"FIXED_PRICE"}],"next":"` + next + `"}`))
+		case 2:
+			if r.URL.Query().Get("offset") != "200" {
+				t.Errorf("second offset = %q", r.URL.Query().Get("offset"))
+			}
+			_, _ = w.Write([]byte(`{"listings":[{"listingId":"L2","sku":"S2","marketplaceId":"EBAY_US","format":"FIXED_PRICE"}]}`))
+		default:
+			t.Fatalf("unexpected call %d", calls)
+		}
+	}))
+	defer server.Close()
+
+	c := inventory.NewClient(auth.StaticToken("A"), inventory.WithBaseURL(server.URL))
+	out, err := c.GetListings(context.Background())
+	if err != nil {
+		t.Fatalf("GetListings: %v", err)
+	}
+	if len(out) != 2 || out[0].ListingID != "L1" || out[1].SKU != "S2" {
+		t.Errorf("listings = %+v", out)
+	}
+}
+
 func TestGetOffersBySKU(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if got := r.URL.Query().Get("sku"); got != "sku-1" {
