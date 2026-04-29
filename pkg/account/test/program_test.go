@@ -54,15 +54,29 @@ func TestOptInSuccess(t *testing.T) {
 }
 
 func TestOptInAlreadyOptedIn(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"errors":[{"errorId":20407,"message":"already opted in"}]}`))
-	}))
-	defer server.Close()
+	cases := []struct {
+		name   string
+		status int
+		body   string
+	}{
+		{"400 + 20407", http.StatusBadRequest, `{"errors":[{"errorId":20407,"message":"already opted in"}]}`},
+		{"400 + 25804", http.StatusBadRequest, `{"errors":[{"errorId":25804,"message":"already enrolled"}]}`},
+		{"409 + 25804", http.StatusConflict, `{"errors":[{"errorId":25804,"message":"already enrolled"}]}`},
+		{"409 alone", http.StatusConflict, `{"errors":[{"errorId":99999}]}`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tc.status)
+				_, _ = w.Write([]byte(tc.body))
+			}))
+			defer server.Close()
 
-	c := account.NewClient(auth.StaticToken("A"), account.WithBaseURL(server.URL))
-	if err := c.OptIn(context.Background(), account.ProgramSellingPolicyManagement); err != nil {
-		t.Errorf("expected nil for already-opted-in, got %v", err)
+			c := account.NewClient(auth.StaticToken("A"), account.WithBaseURL(server.URL))
+			if err := c.OptIn(context.Background(), account.ProgramSellingPolicyManagement); err != nil {
+				t.Errorf("expected nil for already-opted-in, got %v", err)
+			}
+		})
 	}
 }
 

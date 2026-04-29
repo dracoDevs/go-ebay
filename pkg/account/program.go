@@ -40,7 +40,9 @@ func (c *Client) GetOptedInPrograms(ctx context.Context) ([]Program, error) {
 
 // OptIn enrolls the seller into a program. Already-opted-in is not an
 // error; the call returns nil in that case so callers can treat it as
-// idempotent.
+// idempotent. eBay surfaces "already enrolled" two ways: HTTP 409
+// Conflict (newer), and HTTP 400 with errorId 20407 / 25804 in the
+// body (older). Both are treated as success.
 func (c *Client) OptIn(ctx context.Context, programType string) error {
 	body, _ := json.Marshal(Program{ProgramType: programType})
 	res, err := c.doer.Do(ctx, http.MethodPost, "/program/opt_in", bytes.NewReader(body), "application/json")
@@ -50,7 +52,7 @@ func (c *Client) OptIn(ctx context.Context, programType string) error {
 	if res.StatusCode == http.StatusOK || res.StatusCode == http.StatusNoContent {
 		return nil
 	}
-	if isAlreadyOptedIn(res.Body) {
+	if res.StatusCode == http.StatusConflict || isAlreadyOptedIn(res.Body) {
 		return nil
 	}
 	return fmt.Errorf("account: optIn %s %d: %s", programType, res.StatusCode, string(res.Body))
@@ -66,7 +68,7 @@ func isAlreadyOptedIn(body []byte) bool {
 		return false
 	}
 	for _, e := range resp.Errors {
-		if e.ErrorID == 20407 {
+		if e.ErrorID == 20407 || e.ErrorID == 25804 {
 			return true
 		}
 	}
