@@ -10,6 +10,10 @@ Go client library for eBay's seller-side APIs. Covers seven surfaces:
 | [`pkg/fulfillment`](pkg/fulfillment) | Sell Fulfillment v1 (orders, shipping) | JSON | OAuth user token |
 | [`pkg/notification`](pkg/notification) | Commerce Notification v1 | JSON | OAuth (app for topics/destinations, user for subscriptions) |
 | [`pkg/identity`](pkg/identity) | Commerce Identity v1 | JSON | OAuth user token |
+| [`pkg/media`](pkg/media) | Sell Media v1 (image upload from URL) | JSON | OAuth user token |
+| [`pkg/messages`](pkg/messages) | Sell Messages v1 (Q4 2025; verify GA per region) | JSON | OAuth user token |
+| [`pkg/analytics`](pkg/analytics) | Sell Analytics v1 (traffic_report) | JSON | OAuth user token |
+| [`pkg/browse`](pkg/browse) | Buy Browse v1 (buyer-facing item lookup) | JSON | OAuth user token |
 | [`pkg/auth`](pkg/auth) | OAuth identity (token sources) | form-encoded | n/a (mints tokens) |
 
 ## Install

@@ -11,6 +11,10 @@ const (
 	ScopeNotificationSubscription   = "https://api.ebay.com/oauth/api_scope/commerce.notification.subscription"
 	ScopeNotificationSubscriptionRO = "https://api.ebay.com/oauth/api_scope/commerce.notification.subscription.readonly"
 	ScopeCommerceIdentity           = "https://api.ebay.com/oauth/api_scope/commerce.identity.readonly"
+	ScopeSellMedia                  = "https://api.ebay.com/oauth/api_scope/sell.item.draft"
+	ScopeSellAnalytics              = "https://api.ebay.com/oauth/api_scope/sell.analytics.readonly"
+	ScopeBuyBrowse                  = "https://api.ebay.com/oauth/api_scope/buy.item"
+	ScopeSellMessages               = "https://api.ebay.com/oauth/api_scope/sell.messaging"
 )
 
 var (
@@ -47,5 +51,26 @@ var (
 		ScopeBase,
 		ScopeSellInventory,
 		ScopeSellAccount,
+	}
+
+	ScopesMedia = []string{
+		ScopeBase,
+		ScopeSellMedia,
+		ScopeSellInventory,
+	}
+
+	ScopesAnalytics = []string{
+		ScopeBase,
+		ScopeSellAnalytics,
+	}
+
+	ScopesMessages = []string{
+		ScopeBase,
+		ScopeSellMessages,
+	}
+
+	ScopesBrowse = []string{
+		ScopeBase,
+		ScopeBuyBrowse,
 	}
 )
