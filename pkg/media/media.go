@@ -14,7 +14,7 @@ import (
 	"github.com/dracoDevs/go-ebay/pkg/internal/rest"
 )
 
-const baseURL = "https://api.ebay.com/commerce/media/v1"
+const baseURL = "https://apim.ebay.com/commerce/media/v1_beta"
 
 type Client struct {
 	doer rest.Doer
@@ -58,7 +58,7 @@ func (c *Client) CreateImageFromURL(ctx context.Context, imageURL string) (strin
 		return "", fmt.Errorf("media: imageURL is required")
 	}
 	body, _ := json.Marshal(createImageFromURLRequest{ImageURL: imageURL})
-	res, err := c.doer.Do(ctx, http.MethodPost, "/image/create_from_url", bytes.NewReader(body), "application/json")
+	res, err := c.doer.Do(ctx, http.MethodPost, "/image/create_image_from_url", bytes.NewReader(body), "application/json")
 	if err != nil {
 		return "", err
 	}

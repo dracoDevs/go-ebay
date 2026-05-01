@@ -14,7 +14,7 @@ import (
 
 func TestCreateImageFromURLBodyResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/image/create_from_url" {
+		if r.URL.Path != "/image/create_image_from_url" {
 			t.Errorf("path = %q", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
