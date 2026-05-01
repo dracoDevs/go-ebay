@@ -14,7 +14,7 @@ import (
 	"github.com/dracoDevs/go-ebay/pkg/internal/rest"
 )
 
-const baseURL = "https://api.ebay.com/sell/media/v1"
+const baseURL = "https://api.ebay.com/commerce/media/v1"
 
 type Client struct {
 	doer rest.Doer
